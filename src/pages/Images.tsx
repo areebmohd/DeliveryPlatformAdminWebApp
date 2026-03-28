@@ -189,7 +189,7 @@ const Images: React.FC = () => {
                     className="images-banner-card"
                   >
                      <div className="images-banner-img-container">
-                        <img src={banner.image_url} alt="Banner" className="images-banner-img" />
+                        <img src={banner.image_url} alt="Banner" loading="lazy" decoding="async" className="images-banner-img" />
                      </div>
                      <div className="images-banner-actions">
                         <label className="images-banner-action-btn">
@@ -222,7 +222,7 @@ const Images: React.FC = () => {
               >
                  <div className="images-category-img-container">
                     {categoryImages[cat] ? (
-                      <img src={categoryImages[cat]} alt={cat} className="images-category-img" />
+                      <img src={categoryImages[cat]} alt={cat} loading="lazy" decoding="async" className="images-category-img" />
                     ) : (
                       <div className="images-category-placeholder">
                         <ImageIcon size={32} color="#ccc" />

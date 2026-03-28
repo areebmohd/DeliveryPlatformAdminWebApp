@@ -136,7 +136,7 @@ const Stores: React.FC = () => {
                       {/* Banner Image */}
                       <div className="store-banner-container">
                         {store.banner_url ? (
-                          <img src={store.banner_url} alt={store.name} className="store-banner-img" />
+                          <img src={store.banner_url} alt={store.name} loading="lazy" decoding="async" className="store-banner-img" />
                         ) : (
                           <div className="store-banner-placeholder">
                             <ImageIcon size={40} />

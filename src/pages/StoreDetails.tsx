@@ -322,7 +322,7 @@ const StoreDetails: React.FC = () => {
         {/* Banner Section */}
         <div className="store-details-banner-container">
           {store.banner_url ? (
-            <img src={store.banner_url} alt="Banner" className="store-details-banner-img" />
+            <img src={store.banner_url} alt="Banner" loading="lazy" decoding="async" className="store-details-banner-img" />
           ) : (
             <div className="store-details-banner-placeholder">
                <StoreIcon size={60} />
@@ -387,7 +387,7 @@ const StoreDetails: React.FC = () => {
                    className="store-details-product-card"
                  >
                    <div className="store-details-product-img-wrapper">
-                      {p.image_url ? <img src={p.image_url} alt={p.name} /> : <Package size={32} color="#ccc" style={{ margin: 'auto' }} />}
+                      {p.image_url ? <img src={p.image_url} alt={p.name} loading="lazy" decoding="async" /> : <Package size={32} color="#ccc" style={{ margin: 'auto' }} />}
                    </div>
                    <h4 className="store-details-product-name">{p.name}</h4>
                    <p className="store-details-product-price">₹{p.price}</p>
@@ -425,7 +425,7 @@ const StoreDetails: React.FC = () => {
                     <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
                       {store.verification_images.map((img, i) => (
                         <div key={i} style={{ flexShrink: 0, width: '120px', height: '120px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #E5E5EA' }}>
-                          <img src={img} alt="Doc" style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} onClick={() => window.open(img, '_blank')} />
+                          <img src={img} alt="Doc" loading="lazy" decoding="async" style={{ width: '100%', height: '100%', objectFit: 'cover', cursor: 'pointer' }} onClick={() => window.open(img, '_blank')} />
                         </div>
                       ))}
                     </div>

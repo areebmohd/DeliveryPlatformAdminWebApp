@@ -183,7 +183,7 @@ const Products: React.FC = () => {
               >
                 <div className="product-image-container">
                   {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="product-image" />
+                    <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" className="product-image" />
                   ) : (
                     <div className="product-image-placeholder">
                       <Package size={40} />

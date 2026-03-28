@@ -262,7 +262,7 @@ const ProductDetails: React.FC = () => {
         {/* Large Image Section */}
         <div className="product-details-hero-image">
           {product.image_url ? (
-            <img src={product.image_url} alt={product.name} className="product-details-img" />
+            <img src={product.image_url} alt={product.name} loading="lazy" decoding="async" className="product-details-img" />
           ) : (
             <div className="product-details-img-placeholder">
               <Package size={80} />
