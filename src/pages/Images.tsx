@@ -193,7 +193,7 @@ const Images: React.FC = () => {
                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
                background: 'white', border: '1px dashed #007AFF',
                borderRadius: '12px', cursor: 'pointer', color: '#007AFF', fontWeight: 600,
-               width: '100%', aspectRatio: '16/9'
+               width: 'fit-content', padding: '12px 24px', margin: '0 auto'
              }}>
                 <input type="file" accept="image/*" onChange={(e) => handlePickImage('new', 'banner', e)} style={{ display: 'none' }} />
                 <PlusCircle size={24} /> Add New Banner
