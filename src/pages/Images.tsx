@@ -149,7 +149,7 @@ const Images: React.FC = () => {
   };
 
   return (
-    <div className="images-page" style={{ minHeight: '100vh', background: '#F2F2F7', padding: '1rem' }}>
+    <div className="images-page" style={{ minHeight: '100vh', background: '#F2F2F7', padding: '2rem' }}>
       
       {/* Pill Tab Bar (Parity) */}
       <div style={{ 
@@ -162,7 +162,7 @@ const Images: React.FC = () => {
           style={{ 
             flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: 600,
             cursor: 'pointer', transition: 'all 0.2s',
-            background: activeTab === 'banners' ? '#007AFF' : 'transparent',
+            background: activeTab === 'banners' ? '#007bff' : 'transparent',
             color: activeTab === 'banners' ? 'white' : '#666'
           }}
         >
@@ -173,7 +173,7 @@ const Images: React.FC = () => {
           style={{ 
             flex: 1, padding: '10px', borderRadius: '8px', border: 'none', fontSize: '14px', fontWeight: 600,
             cursor: 'pointer', transition: 'all 0.2s',
-            background: activeTab === 'categories' ? '#007AFF' : 'transparent',
+            background: activeTab === 'categories' ? '#007bff' : 'transparent',
             color: activeTab === 'categories' ? 'white' : '#666'
           }}
         >
@@ -184,15 +184,15 @@ const Images: React.FC = () => {
       <main style={{ maxWidth: '800px', margin: '0 auto' }}>
         {loading ? (
           <div style={{ display: 'flex', justifyContent: 'center', padding: '5rem' }}>
-            <Loader2 className="animate-spin" size={48} color="#007AFF" />
+            <Loader2 className="animate-spin" size={48} color="#007bff" />
           </div>
         ) : activeTab === 'banners' ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '600px', margin: '0 auto' }}>
              {/* Add New Banner (Dashed Placeholder) */}
              <label style={{ 
                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.75rem',
-               background: 'white', border: '1px dashed #007AFF',
-               borderRadius: '12px', cursor: 'pointer', color: '#007AFF', fontWeight: 600,
+               background: 'white', border: '1px dashed #007bff',
+               borderRadius: '12px', cursor: 'pointer', color: '#007bff', fontWeight: 600,
                width: 'fit-content', padding: '12px 24px', margin: '0 auto'
              }}>
                 <input type="file" accept="image/*" onChange={(e) => handlePickImage('new', 'banner', e)} style={{ display: 'none' }} />
@@ -209,7 +209,7 @@ const Images: React.FC = () => {
                         <img src={banner.image_url} alt="Banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                      </div>
                      <div style={{ display: 'flex', justifyContent: 'flex-end', padding: '8px', borderTop: '1px solid #F2F2F7', gap: '1rem' }}>
-                        <label style={{ padding: '8px', cursor: 'pointer', color: '#007AFF' }}>
+                        <label style={{ padding: '8px', cursor: 'pointer', color: '#007bff' }}>
                           <input type="file" accept="image/*" onChange={(e) => handlePickImage(banner.id, 'banner', e)} style={{ display: 'none' }} />
                           {uploading === banner.id ? <Loader2 className="animate-spin" size={20} /> : <Pencil size={20} />}
                         </label>

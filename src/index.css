@@ -4,9 +4,9 @@
   font-weight: 400;
 
   /* Color Palette - Modern & Premium */
-  --primary-hsl: 217, 91%, 60%;
+  --primary-hsl: 211, 100%, 50%;
   --primary: hsl(var(--primary-hsl));
-  --primary-hover: hsl(217, 91%, 50%);
+  --primary-hover: hsl(211, 100%, 40%);
   --bg-hsl: 210, 40%, 98%;
   --bg: hsl(var(--bg-hsl));
   --sidebar-bg: #ffffff;
@@ -56,7 +56,6 @@ body {
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
   background-color: var(--bg);
 }
 

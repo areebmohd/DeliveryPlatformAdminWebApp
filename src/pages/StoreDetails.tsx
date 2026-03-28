@@ -277,13 +277,59 @@ const StoreDetails: React.FC = () => {
       {/* Sticky Header (Parity) */}
       <header style={{ 
         position: 'sticky', top: 0, zIndex: 100, background: '#F8F9FA', 
-        padding: '1rem 1.5rem', borderBottom: '1px solid #E5E5EA',
-        display: 'flex', alignItems: 'center', gap: '1rem'
+        padding: '0.75rem 1.5rem', borderBottom: '1px solid #E5E5EA',
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
-        <button onClick={() => navigate('/stores')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#1C1C1E' }}>
-          <ArrowLeft size={24} />
-        </button>
-        <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1C1C1E' }}>Store</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <button onClick={() => navigate('/stores')} style={{ display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', color: '#1C1C1E', padding: 0 }}>
+            <ArrowLeft size={24} />
+          </button>
+          <h1 style={{ fontSize: '20px', fontWeight: '800', color: '#1C1C1E', margin: 0 }}>Store</h1>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          {store.is_active ? (
+            <>
+              {store.has_pending_changes && (
+                <button 
+                  onClick={handleVerifyChanges}
+                  disabled={actionLoading}
+                  style={{ 
+                    background: '#34C759', color: 'white', border: 'none', 
+                    padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px',
+                    display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
+                  }}
+                >
+                  <CheckCircle2 size={16} /> Verify
+                </button>
+              )}
+              <button 
+                onClick={() => handleStatusUpdate('deactivate')}
+                disabled={actionLoading}
+                style={{ 
+                  background: '#FF3B30', color: 'white', border: 'none', 
+                  padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px',
+                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
+                }}
+              >
+                <XCircle size={16} /> Deactivate
+              </button>
+            </>
+          ) : (
+            <button 
+              onClick={() => handleStatusUpdate('activate')}
+              disabled={actionLoading}
+              style={{ 
+                background: '#007bff', color: 'white', border: 'none', 
+                padding: '8px 16px', borderRadius: '20px', fontWeight: '700', fontSize: '13px',
+                display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer'
+              }}
+            >
+              {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />} 
+              Activate
+            </button>
+          )}
+        </div>
       </header>
 
       <main style={{ maxWidth: '800px', width: '100%', margin: '0 auto', paddingBottom: '120px' }}>
@@ -324,11 +370,11 @@ const StoreDetails: React.FC = () => {
               </div>
            </div>
            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ background: '#E5F1FF', color: '#007AFF', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '10px' }}>
+              <span style={{ background: '#e7f1ff', color: '#007bff', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '10px' }}>
                 {store.category}
               </span>
               {store.city && (
-                <span style={{ background: '#E5F1FF', color: '#007AFF', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '10px' }}>
+                <span style={{ background: '#e7f1ff', color: '#007bff', fontSize: '12px', fontWeight: 700, padding: '5px 12px', borderRadius: '10px' }}>
                   {store.city}
                 </span>
               )}
@@ -349,8 +395,8 @@ const StoreDetails: React.FC = () => {
               style={{ 
                 flex: 1, padding: '10px', borderRadius: '22px', border: 'none', fontSize: '14px', fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
-                background: activeTab === 'products' ? '#007AFF' : 'transparent',
-                color: activeTab === 'products' ? 'white' : '#007AFF'
+                background: activeTab === 'products' ? '#007bff' : 'transparent',
+                color: activeTab === 'products' ? 'white' : '#007bff'
               }}
             >
               <Package size={20} /> Products
@@ -360,8 +406,8 @@ const StoreDetails: React.FC = () => {
               style={{ 
                 flex: 1, padding: '10px', borderRadius: '22px', border: 'none', fontSize: '14px', fontWeight: 700,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer',
-                background: activeTab === 'info' ? '#007AFF' : 'transparent',
-                color: activeTab === 'info' ? 'white' : '#007AFF'
+                background: activeTab === 'info' ? '#007bff' : 'transparent',
+                color: activeTab === 'info' ? 'white' : '#007bff'
               }}
             >
               <ImageIcon size={20} /> Store Info
@@ -383,7 +429,7 @@ const StoreDetails: React.FC = () => {
                       {p.image_url ? <img src={p.image_url} alt={p.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <Package size={32} color="#ccc" style={{ margin: 'auto' }} />}
                    </div>
                    <h4 style={{ fontSize: '14px', fontWeight: 700, marginBottom: '2px', color: '#1C1C1E' }}>{p.name}</h4>
-                   <p style={{ fontSize: '16px', fontWeight: 800, color: '#007AFF' }}>₹{p.price}</p>
+                   <p style={{ fontSize: '16px', fontWeight: 800, color: '#007bff' }}>₹{p.price}</p>
                  </motion.div>
                ))}
                {products.length === 0 && (
@@ -406,7 +452,7 @@ const StoreDetails: React.FC = () => {
                    <p style={{ fontSize: '13px', color: '#8E8E93', fontWeight: 600 }}>Owner Number</p>
                    <button 
                      onClick={() => handleContact('tel', store.owner_number || '')}
-                     style={{ background: 'none', border: 'none', padding: 0, fontSize: '16px', fontWeight: 700, color: '#007AFF', cursor: 'pointer' }}
+                     style={{ background: 'none', border: 'none', padding: 0, fontSize: '16px', fontWeight: 700, color: '#007bff', cursor: 'pointer' }}
                    >
                      {store.owner_number || 'Not provided'}
                    </button>
@@ -454,7 +500,7 @@ const StoreDetails: React.FC = () => {
                  <div style={{ padding: '1rem', borderBottom: '1px solid #F2F2F7' }}>
                     <h3 style={{ fontSize: '11px', fontWeight: 800, color: '#8E8E93', textTransform: 'uppercase', marginBottom: '12px' }}>Operating Hours</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <Clock size={18} color="#007AFF" />
+                      <Clock size={18} color="#007bff" />
                       <p style={{ fontSize: '15px', fontWeight: 600 }}>
                         {renderFormattedValue('opening_hours', store.opening_hours)}
                       </p>
@@ -463,7 +509,7 @@ const StoreDetails: React.FC = () => {
                  <div style={{ padding: '1rem' }}>
                     <h3 style={{ fontSize: '11px', fontWeight: 800, color: '#8E8E93', textTransform: 'uppercase', marginBottom: '12px' }}>Live Location</h3>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
-                      <Compass size={18} color="#007AFF" />
+                      <Compass size={18} color="#007bff" />
                       <p style={{ fontSize: '15px', fontWeight: 600 }}>
                         {renderFormattedValue('location_wkt', store.location_wkt)}
                       </p>
@@ -471,7 +517,7 @@ const StoreDetails: React.FC = () => {
                     <button 
                       onClick={openInMap}
                       style={{ 
-                        background: 'none', border: 'none', color: '#007AFF', fontWeight: 800, 
+                        background: 'none', border: 'none', color: '#007bff', fontWeight: 800, 
                         fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' 
                       }}
                     >
@@ -502,7 +548,7 @@ const StoreDetails: React.FC = () => {
                        <button 
                          onClick={() => handleContact('tel', store.phone || '')}
                          style={{ 
-                           flex: 1, background: '#007AFF', color: 'white', border: 'none', 
+                           flex: 1, background: '#007bff', color: 'white', border: 'none', 
                            padding: '12px', borderRadius: '25px', fontWeight: 800, fontSize: '14px',
                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
                          }}
@@ -546,56 +592,7 @@ const StoreDetails: React.FC = () => {
         </div>
       </main>
 
-      {/* Sticky Bottom Footer (Parity Actions) */}
-      <footer style={{ 
-        position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 110,
-        background: 'white', borderTop: '1px solid #E5E5EA', padding: '1rem 1.5rem 2.5rem 1.5rem',
-        boxShadow: '0 -4px 12px rgba(0,0,0,0.05)'
-      }}>
-         <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {store.is_active ? (
-              <>
-                {store.has_pending_changes && (
-                  <button 
-                    onClick={handleVerifyChanges}
-                    disabled={actionLoading}
-                    style={{ 
-                      width: '100%', background: '#34C759', color: 'white', border: 'none', 
-                      padding: '14px', borderRadius: '15px', fontWeight: '800', 
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                    }}
-                  >
-                    <CheckCircle2 size={24} /> Verify Changed Details
-                  </button>
-                )}
-                <button 
-                  onClick={() => handleStatusUpdate('deactivate')}
-                  disabled={actionLoading}
-                  style={{ 
-                    width: '100%', background: '#FF3B30', color: 'white', border: 'none', 
-                    padding: '14px', borderRadius: '15px', fontWeight: '800', 
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                  }}
-                >
-                  <XCircle size={24} /> Deactivate Store
-                </button>
-              </>
-            ) : (
-              <button 
-                onClick={() => handleStatusUpdate('activate')}
-                disabled={actionLoading}
-                style={{ 
-                  width: '100%', background: '#007AFF', color: 'white', border: 'none', 
-                  padding: '14px', borderRadius: '15px', fontWeight: '800', 
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px'
-                }}
-              >
-                {actionLoading ? <Loader2 className="animate-spin" /> : <ShieldCheck size={24} />} 
-                Activate Store
-              </button>
-            )}
-         </div>
-      </footer>
+
 
       {/* Verification Changes Modal (Parity) */}
       <AnimatePresence>
@@ -607,7 +604,7 @@ const StoreDetails: React.FC = () => {
             >
                <div style={{ padding: '1.5rem', borderBottom: '1px solid #F2F2F7', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <ClipboardCheck size={24} color="#007AFF" />
+                    <ClipboardCheck size={24} color="#007bff" />
                     <h2 style={{ fontSize: '20px', fontWeight: 800 }}>Review Changes</h2>
                   </div>
                   <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><XCircle size={24} color="#8E8E93" /></button>
@@ -634,7 +631,7 @@ const StoreDetails: React.FC = () => {
 
                <div style={{ padding: '1.5rem', display: 'flex', gap: '1rem', borderTop: '1px solid #F2F2F7' }}>
                   <button className="btn" style={{ flex: 1, background: '#E5E5EA', color: '#8E8E93' }} onClick={() => setIsModalOpen(false)}>Cancel</button>
-                  <button className="btn" style={{ flex: 1, background: '#007AFF', color: 'white' }} onClick={confirmVerification} disabled={actionLoading}>
+                  <button className="btn" style={{ flex: 1, background: '#007bff', color: 'white' }} onClick={confirmVerification} disabled={actionLoading}>
                     {actionLoading ? <Loader2 className="animate-spin" size={18} /> : <span>Accept Changes</span>}
                   </button>
                </div>

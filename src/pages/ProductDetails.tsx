@@ -256,8 +256,8 @@ const ProductDetails: React.FC = () => {
             style={{ 
               display: 'flex', alignItems: 'center', gap: '4px',
               padding: '6px 14px', borderRadius: '20px', fontWeight: 600,
-              background: isEditing ? '#FFF2F2' : '#F0F7FF',
-              color: isEditing ? '#FF3B30' : '#007AFF',
+              background: isEditing ? '#FFF2F2' : '#e7f1ff',
+              color: isEditing ? '#FF3B30' : '#007bff',
               border: 'none', cursor: 'pointer', fontSize: '14px'
             }}
           >
@@ -282,7 +282,7 @@ const ProductDetails: React.FC = () => {
           {product.product_type !== 'personal' && (
             <label style={{ 
               position: 'absolute', bottom: '2.5rem', right: '1.25rem', 
-              background: '#007AFF', color: 'white', padding: '12px 20px', 
+              background: '#007bff', color: 'white', padding: '12px 20px', 
               borderRadius: '25px', display: 'flex', alignItems: 'center', 
               gap: '8px', cursor: 'pointer', fontWeight: 700, boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
             }}>
@@ -311,14 +311,14 @@ const ProductDetails: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <span style={{ fontSize: '24px', fontWeight: 800, color: '#007AFF' }}>₹{product.price}</span>
+                  <span style={{ fontSize: '24px', fontWeight: 800, color: '#007bff' }}>₹{product.price}</span>
                   {product.weight_kg !== null && (
                     <span style={{ fontSize: '18px', color: '#8E8E93', fontWeight: 500, marginLeft: '6px' }}> • {product.weight_kg} kg</span>
                   )}
                   <div style={{ 
                     marginLeft: '12px', padding: '4px 8px', borderRadius: '6px', fontSize: '10px', fontWeight: 800, textTransform: 'uppercase',
-                    background: product.product_type === 'barcode' ? '#E5F1FF' : product.product_type === 'common' ? '#FFF4E5' : '#F2F2F7',
-                    color: product.product_type === 'barcode' ? '#007AFF' : product.product_type === 'common' ? '#FF9500' : '#666'
+                    background: product.product_type === 'barcode' ? '#e7f1ff' : product.product_type === 'common' ? '#FFF4E5' : '#F2F2F7',
+                    color: product.product_type === 'barcode' ? '#007bff' : product.product_type === 'common' ? '#FF9500' : '#666'
                   }}>
                     {product.product_type}
                   </div>
@@ -356,7 +356,7 @@ const ProductDetails: React.FC = () => {
                   onClick={() => navigate(`/stores/${product.stores.id}`)}
                   style={{ 
                     width: '100%', border: 'none', borderTop: '1px solid #E5E5EA', 
-                    paddingTop: '12px', background: 'none', color: '#007AFF', 
+                    paddingTop: '12px', background: 'none', color: '#007bff', 
                     fontWeight: 700, display: 'flex', alignItems: 'center', 
                     justifyContent: 'space-between', cursor: 'pointer', fontSize: '14px'
                   }}
@@ -393,7 +393,7 @@ const ProductDetails: React.FC = () => {
                     }}
                   >
                     <span style={{ color: category ? '#1C1C1E' : '#999', fontWeight: 600 }}>{category || 'Select Category'}</span>
-                    <ChevronRight size={18} color="#007AFF" />
+                    <ChevronRight size={18} color="#007bff" />
                   </button>
                 </div>
 
@@ -419,7 +419,7 @@ const ProductDetails: React.FC = () => {
                 <div style={{ borderTop: '1px solid #F2F2F7', paddingTop: '1.5rem', marginBottom: '2rem' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h3 style={{ fontSize: '18px', fontWeight: 800 }}>Specifications</h3>
-                    <button onClick={addSpecPair} style={{ background: 'none', border: 'none', color: '#007AFF', cursor: 'pointer' }}>
+                    <button onClick={addSpecPair} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>
                       <Plus size={24} />
                     </button>
                   </div>
@@ -474,7 +474,7 @@ const ProductDetails: React.FC = () => {
                     disabled={saving}
                     style={{ 
                       flex: 1, padding: '14px', borderRadius: '15px', border: 'none',
-                      background: '#007AFF', color: 'white', fontWeight: 700, display: 'flex',
+                      background: '#007bff', color: 'white', fontWeight: 700, display: 'flex',
                       alignItems: 'center', justifyContent: 'center', gap: '8px', cursor: 'pointer'
                     }}
                   >
@@ -518,7 +518,7 @@ const ProductDetails: React.FC = () => {
                     style={{ 
                       width: '100%', padding: '1rem', textAlign: 'left', background: 'none', 
                       border: 'none', fontSize: '16px', fontWeight: category === cat ? 700 : 500,
-                      color: category === cat ? '#007AFF' : '#1C1C1E', display: 'flex', 
+                      color: category === cat ? '#007bff' : '#1C1C1E', display: 'flex', 
                       justifyContent: 'space-between', alignItems: 'center', borderRadius: '8px',
                       marginBottom: '4px'
                     }}

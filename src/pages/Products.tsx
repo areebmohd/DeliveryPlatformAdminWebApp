@@ -110,7 +110,7 @@ const Products: React.FC = () => {
   };
 
   return (
-    <div className="products-page">
+    <div className="products-page" style={{ padding: '2rem' }}>
       <header style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
           <div>

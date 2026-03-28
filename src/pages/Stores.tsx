@@ -85,7 +85,7 @@ const Stores: React.FC = () => {
   }, [activeFilter]);
 
   return (
-    <div className="stores-page">
+    <div className="stores-page" style={{ padding: '2rem' }}>
       <header style={{ marginBottom: '2.5rem' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
           <div>
