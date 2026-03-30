@@ -13,6 +13,7 @@ import {
 import './Images.css';
 
 const PRODUCT_CATEGORIES = [
+  'Grocery',
   'Clothing',
   'Electronics',
   'Food',

@@ -21,6 +21,7 @@ import {
 import './ProductDetails.css';
 
 const PRODUCT_CATEGORIES = [
+  'Grocery',
   'Clothing',
   'Electronics',
   'Food',
@@ -52,6 +53,8 @@ interface Product {
     name: string;
     id: string;
   };
+  raw_image_url: string | null;
+  delivery_vehicle: 'bike' | 'truck';
 }
 
 interface SpecItem {
@@ -73,6 +76,7 @@ const ProductDetails: React.FC = () => {
   const [price, setPrice] = useState('0');
   const [weight, setWeight] = useState('0');
   const [category, setCategory] = useState('');
+  const [deliveryVehicle, setDeliveryVehicle] = useState<'bike' | 'truck'>('bike');
   const [descriptionPairs, setDescriptionPairs] = useState<SpecItem[]>([]);
   const [uploading, setUploading] = useState(false);
 
@@ -93,6 +97,7 @@ const ProductDetails: React.FC = () => {
       setPrice(data.price?.toString() || '0');
       setWeight(data.weight_kg?.toString() || '0');
       setCategory(data.category || '');
+      setDeliveryVehicle(data.delivery_vehicle || 'bike');
       
       try {
         if (!data.description) {
@@ -167,22 +172,44 @@ const ProductDetails: React.FC = () => {
       const validPairs = descriptionPairs.filter(p => p.title.trim() || p.text.trim());
       const isComplete = !!name && !!product.image_url && !!price && !!category;
 
-      const { error } = await supabase
-        .from('products')
-        .update({
-          name,
-          price: parseFloat(price),
-          weight_kg: parseFloat(weight) || 0,
-          category,
-          description: JSON.stringify(validPairs),
-          is_info_complete: isComplete,
-          needs_changes: false,
-          is_wrong_barcode: false,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', id);
+      const updateData = {
+        name,
+        price: parseFloat(price),
+        weight_kg: parseFloat(weight) || 0,
+        category,
+        description: JSON.stringify(validPairs),
+        image_url: product.image_url, // Ensure image is synced across all stores
+        is_info_complete: isComplete,
+        delivery_vehicle: deliveryVehicle,
+        needs_changes: false,
+        is_wrong_barcode: false,
+        raw_image_url: null, // Clear raw image for all stores once info is official
+        updated_at: new Date().toISOString(),
+      };
+
+      let query = supabase.from('products').update(updateData);
+
+      if (product.product_type === 'barcode' && product.barcode) {
+        query = query.eq('barcode', product.barcode);
+      } else {
+        query = query.eq('id', id);
+      }
+
+      const { error } = await query;
 
       if (error) throw error;
+
+      // Cleanup raw image from storage if it exists
+      if (product.raw_image_url) {
+        try {
+          const path = product.raw_image_url.split('products/')[1];
+          if (path) {
+            await supabase.storage.from('products').remove([path]);
+          }
+        } catch (cleanupError) {
+          console.error('Failed to cleanup raw image:', cleanupError);
+        }
+      }
       alert('Product updated successfully!');
       setIsEditing(false);
       fetchProduct();
@@ -208,10 +235,22 @@ const ProductDetails: React.FC = () => {
       // 2. Soft delete
       const { error } = await supabase
         .from('products')
-        .update({ is_deleted: true })
+        .update({ is_deleted: true, raw_image_url: null })
         .eq('id', product.id);
 
       if (error) throw error;
+
+      // Cleanup raw image from storage if it exists
+      if (product.raw_image_url) {
+        try {
+          const path = product.raw_image_url.split('products/')[1];
+          if (path) {
+            await supabase.storage.from('products').remove([path]);
+          }
+        } catch (cleanupError) {
+          console.error('Failed to cleanup raw image:', cleanupError);
+        }
+      }
       alert('Product removed and store notified.');
       navigate('/products');
     } catch (error: any) {
@@ -277,6 +316,13 @@ const ProductDetails: React.FC = () => {
               {product.image_url ? 'Change Photo' : 'Add Photo'}
             </label>
           )}
+
+          {product.raw_image_url && (
+            <div className="raw-image-badge" onClick={() => window.open(product.raw_image_url!, '_blank')}>
+              <Camera size={14} />
+              <span>Raw Image Available</span>
+            </div>
+          )}
         </div>
 
         {/* Content Section */}
@@ -333,6 +379,21 @@ const ProductDetails: React.FC = () => {
                   <ChevronRight size={16} />
                 </button>
               </div>
+
+              {product.raw_image_url && (
+                <div className="raw-image-section">
+                  <h3 className="product-details-section-title">Raw Image (Submitted by Store)</h3>
+                  <div className="raw-image-preview-container">
+                    <img src={product.raw_image_url} alt="Raw product" className="raw-image-preview" />
+                    <button 
+                      className="raw-image-full-btn"
+                      onClick={() => window.open(product.raw_image_url!, '_blank')}
+                    >
+                      View Full Size
+                    </button>
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -360,24 +421,56 @@ const ProductDetails: React.FC = () => {
                   </button>
                 </div>
 
-                <div className="product-edit-grid">
-                  <div>
-                    <label className="product-edit-label">Price (₹)</label>
-                    <input 
-                      type="number" value={price} 
-                      onChange={e => setPrice(e.target.value)} 
-                      className="product-edit-input" 
-                    />
+                  <div className="product-edit-grid">
+                    <div>
+                      <label className="product-edit-label">Price (₹)</label>
+                      <input 
+                        type="text"
+                        inputMode="decimal"
+                        value={price} 
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          if (val.split('.').length <= 2) setPrice(val);
+                        }} 
+                        className="product-edit-input" 
+                        placeholder="0"
+                      />
+                    </div>
+                    <div>
+                      <label className="product-edit-label">Weight (kg)</label>
+                      <input 
+                        type="text"
+                        inputMode="decimal"
+                        value={weight} 
+                        onChange={e => {
+                          const val = e.target.value.replace(/[^0-9.]/g, '');
+                          if (val.split('.').length <= 2) setWeight(val);
+                        }} 
+                        className="product-edit-input" 
+                        placeholder="0"
+                      />
+                    </div>
                   </div>
-                  <div>
-                    <label className="product-edit-label">Weight (kg)</label>
-                    <input 
-                      type="number" value={weight} 
-                      onChange={e => setWeight(e.target.value)} 
-                      className="product-edit-input" 
-                    />
-                  </div>
-                </div>
+
+                  {product.product_type === 'barcode' && (
+                    <div className="product-edit-group">
+                      <label className="product-edit-label">Delivery Vehicle</label>
+                      <div className="vehicle-selector">
+                        <button 
+                          className={`vehicle-btn ${deliveryVehicle === 'bike' ? 'active' : ''}`}
+                          onClick={() => setDeliveryVehicle('bike')}
+                        >
+                          Bike
+                        </button>
+                        <button 
+                          className={`vehicle-btn ${deliveryVehicle === 'truck' ? 'active' : ''}`}
+                          onClick={() => setDeliveryVehicle('truck')}
+                        >
+                          Truck
+                        </button>
+                      </div>
+                    </div>
+                  )}
 
                 <div className="product-edit-specs-section">
                   <div className="product-edit-specs-header">

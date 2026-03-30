@@ -60,7 +60,21 @@ const Products: React.FC = () => {
 
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
-      setProducts(data || []);
+
+      let finalData = data || [];
+
+      // Deduplicate by barcode for uncomplete barcode products (User Request)
+      if (activeTab === 'barcode' && barcodeFilter === 'uncomplete') {
+        const seenBarcodes = new Set();
+        finalData = finalData.filter(p => {
+          if (!p.barcode) return true;
+          if (seenBarcodes.has(p.barcode)) return false;
+          seenBarcodes.add(p.barcode);
+          return true;
+        });
+      }
+
+      setProducts(finalData);
     } catch (error: any) {
       console.error('Error fetching products:', error.message);
     } finally {
