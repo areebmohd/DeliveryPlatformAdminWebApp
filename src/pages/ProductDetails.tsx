@@ -55,6 +55,7 @@ interface Product {
   };
   raw_image_url: string | null;
   delivery_vehicle: 'bike' | 'truck';
+  options: { title: string; values: string[] }[] | null;
 }
 
 interface SpecItem {
@@ -78,6 +79,7 @@ const ProductDetails: React.FC = () => {
   const [category, setCategory] = useState('');
   const [deliveryVehicle, setDeliveryVehicle] = useState<'bike' | 'truck'>('bike');
   const [descriptionPairs, setDescriptionPairs] = useState<SpecItem[]>([]);
+  const [productOptions, setProductOptions] = useState<{ title: string; values: string[] }[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const fetchProduct = async () => {
@@ -113,6 +115,8 @@ const ProductDetails: React.FC = () => {
       } catch (e) {
         setDescriptionPairs([{ title: 'Description', text: data.description || '' }]);
       }
+      
+      setProductOptions(data.options || []);
     } catch (error: any) {
       console.error('Error fetching product:', error.message);
     } finally {
@@ -178,6 +182,7 @@ const ProductDetails: React.FC = () => {
         weight_kg: parseFloat(weight) || 0,
         category,
         description: JSON.stringify(validPairs),
+        options: productOptions,
         image_url: product.image_url, // Ensure image is synced across all stores
         is_info_complete: isComplete,
         delivery_vehicle: deliveryVehicle,
@@ -364,6 +369,22 @@ const ProductDetails: React.FC = () => {
                 </div>
               </div>
 
+              <div style={{ marginBottom: '2rem' }}>
+                <h3 className="product-details-section-title">Product Options (Variants)</h3>
+                <div className="product-details-spec-list">
+                  {productOptions.length > 0 ? productOptions.map((opt, idx) => (
+                    <div key={idx} className="product-details-spec-item">
+                      <span className="product-details-spec-title">{opt.title}</span>
+                      <div className="product-details-option-values">
+                        {opt.values.map((v, vIdx) => (
+                          <span key={vIdx} className="option-value-chip">{v}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )) : <p style={{ color: '#8E8E93' }}>No variants defined</p>}
+                </div>
+              </div>
+
               {/* Store Info Card */}
               <div className="product-details-store-card">
                 <div className="product-details-store-header">
@@ -497,6 +518,54 @@ const ProductDetails: React.FC = () => {
                             placeholder="Value..." value={pair.text} 
                             onChange={e => updateSpecPair(idx, 'text', e.target.value)} 
                             className="product-edit-spec-value-textarea" 
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="product-edit-specs-section">
+                  <div className="product-edit-specs-header">
+                    <h3 className="product-details-section-title" style={{ marginBottom: 0 }}>Options & Variants</h3>
+                    <button 
+                      onClick={() => setProductOptions([...productOptions, { title: '', values: [] }])} 
+                      className="product-edit-add-spec-btn"
+                    >
+                      <Plus size={24} />
+                    </button>
+                  </div>
+                  <div className="product-details-spec-list">
+                    {productOptions.map((opt, idx) => (
+                      <div key={idx} className="product-edit-spec-item">
+                        <div className="product-edit-spec-title-row">
+                          <input 
+                            placeholder="e.g. Size" 
+                            value={opt.title} 
+                            onChange={e => {
+                               const newOptions = [...productOptions];
+                               newOptions[idx].title = e.target.value;
+                               setProductOptions(newOptions);
+                            }} 
+                            className="product-edit-spec-title-input" 
+                          />
+                          <button 
+                            onClick={() => setProductOptions(productOptions.filter((_, i) => i !== idx))} 
+                            className="product-edit-spec-delete-btn"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </div>
+                        <div style={{ marginTop: '0.5rem' }}>
+                          <input 
+                            placeholder="S, M, L, XL (Comma separated)" 
+                            value={opt.values.join(', ')} 
+                            onChange={e => {
+                               const newOptions = [...productOptions];
+                               newOptions[idx].values = e.target.value.split(',').map(v => v.trim()).filter(v => v !== '');
+                               setProductOptions(newOptions);
+                            }} 
+                            className="product-edit-input" 
                           />
                         </div>
                       </div>

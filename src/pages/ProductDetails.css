@@ -160,10 +160,26 @@
 
 .product-details-spec-item {
   display: flex;
-  flex-direction: row;
-  border-bottom: 1px solid #C7C7CC;
-  background: white;
-  min-height: 44px;
+  flex-direction: column;
+  border-bottom: 2px solid #F2F2F7;
+  padding: 1rem 0.5rem;
+  gap: 0.5rem;
+}
+
+.product-details-option-values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.option-value-chip {
+  background: #F2F2F7;
+  color: var(--text-primary);
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid #E5E5EA;
 }
 
 .product-details-spec-item:last-child {
