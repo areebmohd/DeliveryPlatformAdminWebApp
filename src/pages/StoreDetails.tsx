@@ -165,6 +165,7 @@ const StoreDetails: React.FC = () => {
       { key: 'owner_number', label: 'Owner Number' },
       { key: 'location_wkt', label: 'Location' },
       { key: 'opening_hours', label: 'Opening Hours' },
+      { key: 'banner_url', label: 'Store Banner' },
     ];
 
     const approved = store.approved_details || {};
@@ -207,8 +208,9 @@ const StoreDetails: React.FC = () => {
         pincode: store.pincode,
         owner_name: store.owner_name,
         owner_number: store.owner_number,
-        location: store.location_wkt,
+        location_wkt: store.location_wkt,
         opening_hours: store.opening_hours,
+        banner_url: store.banner_url,
       };
 
       const { error } = await supabase
@@ -248,8 +250,9 @@ const StoreDetails: React.FC = () => {
         pincode: store.pincode,
         owner_name: store.owner_name,
         owner_number: store.owner_number,
-        location: store.location_wkt,
+        location_wkt: store.location_wkt,
         opening_hours: store.opening_hours,
+        banner_url: store.banner_url,
       };
 
       const updates = type === 'activate' 
