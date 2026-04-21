@@ -57,6 +57,7 @@ export interface Store {
   owner_name: string | null;
   owner_number: string | null;
   upi_id: string | null;
+  owner_id: string;
   location_wkt: string | null;
   location?: Record<string, unknown>;
   opening_hours: Record<string, unknown>;

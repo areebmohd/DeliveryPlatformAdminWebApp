@@ -19,7 +19,8 @@ import {
   Globe,
   ExternalLink,
   MessageCircle,
-  Map
+  Map,
+  AlertCircle
 } from 'lucide-react';
 import { parseHexEWKB } from '../utils/formatters';
 import type { Store, Product } from '../types';
@@ -185,6 +186,34 @@ const StoreDetails: React.FC = () => {
     }
   }, [getChanges, confirmVerification]);
 
+  const handleWrongInfo = useCallback(async () => {
+    if (!store || !store.owner_id) {
+      alert('Store owner information is missing.');
+      return;
+    }
+
+    if (!window.confirm('Send a notification to the owner about incorrect store information?')) return;
+
+    try {
+      setActionLoading(true);
+      const { error } = await supabase.from('notifications').insert([
+        {
+          title: 'Incorrect Store Information',
+          description: 'Your store info is incorrect kindly refill it properly',
+          target_group: 'business',
+          user_id: store.owner_id
+        },
+      ]);
+
+      if (error) throw error;
+      alert('Notification sent to the store owner.');
+    } catch (error: unknown) {
+      alert(`Failed to send notification: ${(error as Error).message}`);
+    } finally {
+      setActionLoading(false);
+    }
+  }, [store]);
+
   const handleStatusUpdate = useCallback(async (type: 'activate' | 'deactivate') => {
     if (!store) return;
 
@@ -296,14 +325,23 @@ const StoreDetails: React.FC = () => {
               <XCircle size={16} /> Deactivate
             </button>
           ) : (
-            <button 
-              onClick={() => handleStatusUpdate('activate')}
-              disabled={actionLoading}
-              className="detail-action-btn primary"
-            >
-              {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />} 
-              Activate
-            </button>
+            <>
+              <button 
+                onClick={handleWrongInfo}
+                disabled={actionLoading}
+                className="detail-action-btn warning"
+              >
+                <AlertCircle size={16} /> Wrong Info
+              </button>
+              <button 
+                onClick={() => handleStatusUpdate('activate')}
+                disabled={actionLoading}
+                className="detail-action-btn primary"
+              >
+                {actionLoading ? <Loader2 className="animate-spin" size={16} /> : <ShieldCheck size={16} />} 
+                Activate
+              </button>
+            </>
           )}
         </div>
       </header>
