@@ -8,13 +8,17 @@ import {
   CreditCard, 
   Search, 
   AlertCircle,
-  Loader2
+  Loader2,
+  ShieldCheck,
+  ShieldAlert,
+  Verified
 } from 'lucide-react';
 import './Riders.css';
 
 interface RiderProfile {
   vehicle_type: string | null;
   vehicle_number: string | null;
+  is_verified: boolean;
 }
 
 interface Address {
@@ -56,7 +60,8 @@ const Riders: React.FC = () => {
           upi_id,
           rider_profiles (
             vehicle_type,
-            vehicle_number
+            vehicle_number,
+            is_verified
           ),
           addresses (
             address_line,
@@ -84,6 +89,44 @@ const Riders: React.FC = () => {
 
   const handleCall = useCallback((phone: string) => {
     window.location.href = `tel:${phone}`;
+  }, []);
+
+  const handleToggleVerify = useCallback(async (riderId: string, currentStatus: boolean) => {
+    const confirmMsg = currentStatus 
+      ? 'Are you sure you want to unverify this rider?' 
+      : 'Are you sure you want to verify this rider?';
+      
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      const { data: updatedData, error: updateError } = await supabase
+        .from('rider_profiles')
+        .update({ is_verified: !currentStatus })
+        .eq('profile_id', riderId)
+        .select();
+
+      if (updateError) throw updateError;
+      
+      if (!updatedData || updatedData.length === 0) {
+        throw new Error('Rider profile record not found. Please ensure the rider has completed their profile.');
+      }
+      
+      setRiders(prev => prev.map(r => {
+        if (r.id === riderId) {
+          const profiles = Array.isArray(r.rider_profiles) ? r.rider_profiles : [r.rider_profiles];
+          return {
+            ...r,
+            rider_profiles: profiles.map(p => p ? { ...p, is_verified: !currentStatus } : p)
+          };
+        }
+        return r;
+      }));
+
+      alert(`Rider ${!currentStatus ? 'verified' : 'unverified'} successfully!`);
+    } catch (err: unknown) {
+      console.error('Error updating verification status:', err);
+      alert((err as Error).message || 'Failed to update verification status');
+    }
   }, []);
 
   const filteredRiders = useMemo(() => {
@@ -146,7 +189,12 @@ const Riders: React.FC = () => {
       ) : (
         <div className="riders-grid">
           {filteredRiders.map((rider) => (
-            <RiderCard key={rider.id} rider={rider} onCall={handleCall} />
+            <RiderCard 
+              key={rider.id} 
+              rider={rider} 
+              onCall={handleCall} 
+              onToggleVerify={handleToggleVerify}
+            />
           ))}
         </div>
       )}
@@ -157,13 +205,15 @@ const Riders: React.FC = () => {
 interface RiderCardProps {
   rider: Rider;
   onCall: (phone: string) => void;
+  onToggleVerify: (riderId: string, currentStatus: boolean) => void;
 }
 
-const RiderCard: React.FC<RiderCardProps> = memo(({ rider, onCall }) => {
+const RiderCard: React.FC<RiderCardProps> = memo(({ rider, onCall, onToggleVerify }) => {
   const riderProfile = Array.isArray(rider.rider_profiles) 
     ? rider.rider_profiles[0] 
     : rider.rider_profiles;
   
+  const isVerified = riderProfile?.is_verified || false;
   const defaultAddress = rider.addresses?.find(a => a.is_default) || rider.addresses?.[0];
 
   return (
@@ -213,15 +263,23 @@ const RiderCard: React.FC<RiderCardProps> = memo(({ rider, onCall }) => {
       <div className="rider-footer">
         <div className="upi-badge" title={rider.upi_id || 'Not provided'}>
           <CreditCard size={14} />
-          <span>{rider.upi_id || 'No UPI ID'}</span>
+          <span className="full-text">{rider.upi_id || 'No UPI ID'}</span>
         </div>
-        <button 
-          onClick={() => rider.phone && onCall(rider.phone)}
-          className="call-btn"
-          title="Call Rider"
-        >
-          <Phone size={18} />
-        </button>
+
+        <div className="rider-actions">
+          <div className={`verification-badge ${isVerified ? 'verified' : 'unverified'}`}>
+            {isVerified ? <ShieldCheck size={14} /> : <ShieldAlert size={14} />}
+            <span>{isVerified ? 'Verified' : 'Pending'}</span>
+          </div>
+
+          <button 
+            onClick={() => onToggleVerify(rider.id, isVerified)}
+            className={`verify-btn-text ${isVerified ? 'unverify' : 'verify'}`}
+          >
+            {isVerified ? <Verified size={16} /> : <ShieldCheck size={16} />}
+            <span>{isVerified ? 'Unverify' : 'Verify'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

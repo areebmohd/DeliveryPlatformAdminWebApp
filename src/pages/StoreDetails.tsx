@@ -153,15 +153,17 @@ const StoreDetails: React.FC = () => {
         banner_url: store.banner_url,
       };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .update({ 
           has_pending_changes: false, 
           approved_details: snapshot 
         })
-        .eq('id', store.id);
+        .eq('id', store.id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Store record not found in database.');
       alert('Changes verified successfully!');
       setIsModalOpen(false);
       fetchStoreDetails();
@@ -175,6 +177,7 @@ const StoreDetails: React.FC = () => {
   const handleVerifyChanges = useCallback(() => {
     const diffs = getChanges();
     if (diffs.length === 0) {
+      if (!window.confirm('No changes detected. Mark as verified anyway?')) return;
       confirmVerification();
     } else {
       setChangedFields(diffs);
@@ -184,6 +187,13 @@ const StoreDetails: React.FC = () => {
 
   const handleStatusUpdate = useCallback(async (type: 'activate' | 'deactivate') => {
     if (!store) return;
+
+    const confirmMsg = type === 'activate' 
+      ? 'Are you sure you want to activate and verify this store?' 
+      : 'Are you sure you want to deactivate this store?';
+    
+    if (!window.confirm(confirmMsg)) return;
+
     try {
       setActionLoading(true);
       const snapshot = {
@@ -209,12 +219,14 @@ const StoreDetails: React.FC = () => {
         ? { is_active: true, is_approved: true, approved_details: snapshot, verification_images: [] }
         : { is_active: false, is_approved: false };
 
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('stores')
         .update(updates)
-        .eq('id', store.id);
+        .eq('id', store.id)
+        .select();
 
       if (error) throw error;
+      if (!data || data.length === 0) throw new Error('Store record not found in database.');
       alert(`Store ${type}d successfully!`);
       fetchStoreDetails();
     } catch (error: unknown) {
