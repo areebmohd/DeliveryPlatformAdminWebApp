@@ -22,6 +22,10 @@ interface Notification {
   description: string;
   created_at: string;
   target_group: string;
+  fcm_sent?: boolean;
+  fcm_error?: string;
+  order_id?: string | null;
+  user_id?: string | null;
 }
 
 const TARGET_GROUPS = [
@@ -48,6 +52,7 @@ const Notifications: React.FC = () => {
         .select('*')
         .eq('target_group', selectedGroup)
         .is('order_id', null)
+        .is('user_id', null)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -62,6 +67,37 @@ const Notifications: React.FC = () => {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Real-time listener
+  useEffect(() => {
+    const channel = supabase
+      .channel('broadcast_updates')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'notifications' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newNotif = payload.new as Notification;
+            // Only add if it's a broadcast for the current group
+            if (newNotif.target_group === selectedGroup && !newNotif.order_id && !newNotif.user_id) {
+              setNotifications(prev => {
+                // Prevent duplicates if fetch is also running
+                if (prev.some(n => n.id === newNotif.id)) return prev;
+                return [newNotif, ...prev];
+              });
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNotif = payload.new as Notification;
+            setNotifications(prev => prev.map(n => n.id === updatedNotif.id ? { ...n, ...updatedNotif } : n));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [selectedGroup]);
 
   const handleSendBroadcast = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,20 +116,22 @@ const Notifications: React.FC = () => {
 
       if (error) throw error;
 
-      setStatus({ type: 'success', message: 'Broadcast sent successfully!' });
+      setStatus({ type: 'success', message: 'Broadcast initiated successfully!' });
       setTitle('');
       setDescription('');
+      
+      // Auto close modal and refresh as fallback
       setTimeout(() => {
         setModalVisible(false);
         setStatus(null);
-        fetchNotifications();
+        fetchNotifications(); // Fallback refresh
       }, 1500);
     } catch (error: unknown) {
       setStatus({ type: 'error', message: (error as Error).message || 'Failed to send broadcast' });
     } finally {
       setSending(false);
     }
-  }, [selectedGroup, title, description, fetchNotifications]);
+  }, [selectedGroup, title, description]);
 
   const openModal = useCallback(() => setModalVisible(true), []);
   const closeModal = useCallback(() => {
@@ -124,10 +162,10 @@ const Notifications: React.FC = () => {
         ))}
       </div>
 
-      {loading ? (
+      {loading && notifications.length === 0 ? (
         <div className="loading-state">
           <Loader2 className="animate-spin" size={48} color="#007bff" />
-          <p>Fetching notifications history...</p>
+          <p>Fetching broadcast history...</p>
         </div>
       ) : notifications.length === 0 ? (
         <div className="empty-state">
@@ -136,9 +174,11 @@ const Notifications: React.FC = () => {
         </div>
       ) : (
         <div className="notifications-list">
-          {notifications.map((item) => (
-            <NotificationCard key={item.id} item={item} />
-          ))}
+          <AnimatePresence initial={false}>
+            {notifications.map((item) => (
+              <NotificationCard key={item.id} item={item} />
+            ))}
+          </AnimatePresence>
         </div>
       )}
 
@@ -206,13 +246,19 @@ const Notifications: React.FC = () => {
 };
 
 const NotificationCard: React.FC<{ item: Notification }> = memo(({ item }) => (
-  <div className="notification-card">
+  <motion.div 
+    className="notification-card"
+    initial={{ x: -20, opacity: 0 }}
+    animate={{ x: 0, opacity: 1 }}
+    layout
+  >
     <div className="notification-card-header">
       <h3 className="notification-card-title">{item.title}</h3>
       <span className="notification-card-time">{formatDateFull(item.created_at)}</span>
     </div>
     <div className="notification-card-body">{item.description}</div>
-  </div>
+  </motion.div>
 ));
 
 export default memo(Notifications);
+
