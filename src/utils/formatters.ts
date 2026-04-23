@@ -2,7 +2,7 @@
  * Formats a number as Indian Rupee currency.
  */
 export const formatCurrency = (amount: number): string => {
-  return `₹${Math.round(amount).toLocaleString('en-IN')}`;
+  return `₹${Number(amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
 /**

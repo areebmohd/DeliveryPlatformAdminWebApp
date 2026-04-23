@@ -216,10 +216,14 @@ const Payments: React.FC = () => {
   }, [fetchPayouts]);
 
   const handleCloseQrModal = useCallback(async () => {
-    if (window.confirm('Was the payment successful?')) {
+    if (window.confirm('Was the payment successful? Mark as Paid?')) {
       if (payingGroup) {
         await confirmPayment('online', payingGroup.ids);
       }
+    } else {
+      // If user clicks Cancel on the confirm dialog, just close the modal
+      setQrModalVisible(false);
+      setPayingGroup(null);
     }
   }, [payingGroup, confirmPayment]);
 
