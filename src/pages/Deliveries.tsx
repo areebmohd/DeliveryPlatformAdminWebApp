@@ -299,56 +299,58 @@ const Deliveries: React.FC = () => {
                     </div>
                   </div>
 
-                    {Object.entries(stores).map(([sId, sData]: [string, any], sIdx) => (
-                      <div key={sId} className="journey-step">
-                        <div className="step-icon pickup"><Store size={18} /></div>
-                        <div className="step-content">
-                          <div className="step-label">Pickup From {sData.name}</div>
-                          <div className="step-address">{sData.address}</div>
-                          {sData.phone && (
-                            <a href={`tel:${sData.phone}`} className="step-phone">
-                              <Phone size={14} /> {sData.phone}
-                            </a>
-                          )}
-                          
-                          <div className="mini-product-list">
-                            {sData.items.map((product: any) => {
-                              const storeOffer = order.applied_offers?.[sId];
-                              const { original, discounted } = getItemTotals(product, sData.items, storeOffer);
-                              return (
-                                <div key={product.id} className="mini-product-row">
-                                  <span className="mini-product-name">{product.product_name} x{product.quantity}</span>
-                                  <div className="mini-product-price">
-                                    {discounted < original ? (
-                                      <>
-                                        <span className="price-discounted">₹{discounted.toFixed(2)}</span>
-                                        <span className="price-original" style={{ textDecoration: 'line-through', color: '#999', fontSize: '0.75rem', marginLeft: '0.5rem' }}>₹{original.toFixed(2)}</span>
-                                      </>
-                                    ) : (
-                                      <span className="price-discounted">₹{original.toFixed(2)}</span>
-                                    )}
+                    <div className="delivery-journey">
+                      {Object.entries(stores).map(([sId, sData]: [string, any], sIdx) => (
+                        <div key={sId} className="journey-step">
+                          <div className="step-icon pickup"><Store size={18} /></div>
+                          <div className="step-content">
+                            <div className="step-label">Pickup From {sData.name}</div>
+                            <div className="step-address">{sData.address}</div>
+                            {sData.phone && (
+                              <a href={`tel:${sData.phone}`} className="step-phone">
+                                <Phone size={14} /> {sData.phone}
+                              </a>
+                            )}
+                            
+                            <div className="mini-product-list">
+                              {sData.items.map((product: any) => {
+                                const storeOffer = order.applied_offers?.[sId];
+                                const { original, discounted } = getItemTotals(product, sData.items, storeOffer);
+                                return (
+                                  <div key={product.id} className="mini-product-row">
+                                    <span className="mini-product-name">{product.product_name} x{product.quantity}</span>
+                                    <div className="mini-product-price">
+                                      {discounted < original ? (
+                                        <>
+                                          <span className="price-discounted">₹{discounted.toFixed(2)}</span>
+                                          <span className="price-original" style={{ textDecoration: 'line-through', color: '#999', fontSize: '0.75rem', marginLeft: '0.5rem' }}>₹{original.toFixed(2)}</span>
+                                        </>
+                                      ) : (
+                                        <span className="price-discounted">₹{original.toFixed(2)}</span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })}
+                                );
+                              })}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
 
-                    <div className="journey-step deliver-to">
-                      <div className="step-icon delivery"><MapPin size={18} /></div>
-                      <div className="step-content">
-                        <div className="step-label">Deliver To</div>
-                        <div className="step-title">{customerName}</div>
-                        <div className="step-address">
-                          {address?.address_line || 'No address'}, {address?.city || ''}
+                      <div className="journey-step deliver-to">
+                        <div className="step-icon delivery"><MapPin size={18} /></div>
+                        <div className="step-content">
+                          <div className="step-label">Deliver To</div>
+                          <div className="step-title">{customerName}</div>
+                          <div className="step-address">
+                            {address?.address_line || 'No address'}, {address?.city || ''}
+                          </div>
+                          {(address?.receiver_phone || order.customer?.phone) && (
+                            <a href={`tel:${address?.receiver_phone || order.customer?.phone}`} className="step-phone">
+                              <Phone size={14} /> {address?.receiver_phone || order.customer?.phone}
+                            </a>
+                          )}
                         </div>
-                        {(address?.receiver_phone || order.customer?.phone) && (
-                          <a href={`tel:${address?.receiver_phone || order.customer?.phone}`} className="step-phone">
-                            <Phone size={14} /> {address?.receiver_phone || order.customer?.phone}
-                          </a>
-                        )}
                       </div>
                     </div>
                   <div className="rider-box">
