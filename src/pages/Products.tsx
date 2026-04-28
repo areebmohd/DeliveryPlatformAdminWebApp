@@ -15,7 +15,11 @@ import './Products.css';
 
 const Products: React.FC = () => {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
+  type ProductWithStore = Product & { 
+    stores?: { name: string } | null;
+    storeCount?: number;
+  };
+  const [products, setProducts] = useState<ProductWithStore[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'barcode' | 'common' | 'personal'>('barcode');
   const [barcodeFilter, setBarcodeFilter] = useState<'all' | 'uncomplete' | 'needs_changes'>('all');
@@ -46,7 +50,22 @@ const Products: React.FC = () => {
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
 
-      let finalData = (data as (Product & { stores: { name: string } | null })[]) || [];
+      let fetchedData = (data as ProductWithStore[]) || [];
+
+      // Group identical products
+      const productMap = new Map<string, ProductWithStore>();
+      
+      fetchedData.forEach(p => {
+        const key = `${p.name}|${p.price}|${p.weight_kg || ''}|${p.description || ''}|${JSON.stringify(p.options || [])}`;
+        if (productMap.has(key)) {
+          const existing = productMap.get(key)!;
+          existing.storeCount = (existing.storeCount || 1) + 1;
+        } else {
+          productMap.set(key, { ...p, storeCount: 1 });
+        }
+      });
+
+      let finalData = Array.from(productMap.values());
 
       // Deduplicate by barcode for uncomplete barcode products (User Request)
       if (activeTab === 'barcode' && barcodeFilter === 'uncomplete') {
@@ -196,7 +215,7 @@ const Products: React.FC = () => {
 };
 
 interface ProductItemProps {
-  product: Product;
+  product: any; // We'll just use any here to keep it simple, or we can export ProductWithStore
   activeTab: string;
   uploading: string | null;
   onImagePick: (id: string, e: React.ChangeEvent<HTMLInputElement>) => void;
@@ -266,7 +285,11 @@ const ProductItem: React.FC<ProductItemProps> = memo(({ product, activeTab, uplo
 
         <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid #f2f2f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
           <StoreIcon size={13} color="var(--primary)" />
-          <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 600 }}>{product.stores?.name || 'Unknown'}</span>
+          <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 600 }}>
+            {product.storeCount && product.storeCount > 1 
+              ? 'Available in multiple stores' 
+              : product.stores?.name || 'Unknown'}
+          </span>
         </div>
       </div>
     </motion.div>
