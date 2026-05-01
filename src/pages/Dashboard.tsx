@@ -7,7 +7,8 @@ import {
   Store, 
   TrendingUp, 
   Package, 
-  Loader2
+  Loader2,
+  Users
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { formatCurrency } from '../utils/formatters';
@@ -130,10 +131,22 @@ const Dashboard: React.FC = () => {
           color="#8b5cf6" 
         />
         <StatCard 
-          title="Items Cataloged" 
+          title="Items Added" 
           value={stats?.products_added || 0} 
           icon={<Package size={32} />} 
           color="#f97316" 
+        />
+        <StatCard 
+          title="Users Joined" 
+          value={stats?.users_joined || 0} 
+          icon={<Users size={32} />} 
+          color="#3b82f6" 
+        />
+        <StatCard 
+          title="Riders Joined" 
+          value={stats?.riders_joined || 0} 
+          icon={<Bike size={32} />} 
+          color="#10b981" 
         />
       </div>
     </div>

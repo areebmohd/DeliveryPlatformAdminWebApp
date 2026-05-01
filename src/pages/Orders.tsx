@@ -307,10 +307,10 @@ const Orders: React.FC = () => {
                                   )}
                                 </div>
                                 <div className="product-price-box">
-                                  {discounted < original ? (
+                                  {discounted < original - 0.1 ? (
                                     <>
-                                      <span className="price-discounted">₹{discounted.toFixed(2)}</span>
                                       <span className="price-original">₹{original.toFixed(2)}</span>
+                                      <span className="price-discounted">₹{discounted.toFixed(2)}</span>
                                     </>
                                   ) : (
                                     <span className="price-discounted">₹{original.toFixed(2)}</span>
@@ -350,6 +350,16 @@ const Orders: React.FC = () => {
                     );
                   })}
                 </div>
+
+                {order.applied_offers?.app_offer && (
+                  <div className="order-app-offer-badge">
+                    <Tag size={16} className="offer-icon" />
+                    <div className="offer-details">
+                      <h4>App Offer</h4>
+                      <p>Free delivery above ₹99</p>
+                    </div>
+                  </div>
+                )}
 
                 <div className="order-card-divider" />
 

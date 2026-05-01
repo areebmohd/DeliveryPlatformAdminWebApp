@@ -7,6 +7,8 @@ export interface DashboardStats {
   total_to_admin: number;
   stores_joined: number;
   products_added: number;
+  users_joined: number;
+  riders_joined: number;
 }
 
 export type Timeframe = 'daily' | 'weekly' | 'monthly';

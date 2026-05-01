@@ -97,6 +97,7 @@ const Payments: React.FC = () => {
           rider_id,
           store_id,
           created_at,
+          applied_offers,
           order_items(product_price, quantity)
         `)
         .or(`status.eq.delivered,status.eq.cancelled`);
@@ -111,7 +112,13 @@ const Payments: React.FC = () => {
         payment_date: string;
         status: string;
       }[] = [];
-      const getRiderFee = (order: { rider_delivery_fee?: number | string; delivery_fee: number | string }) => {
+      const getRiderFee = (order: any) => {
+        const appliedOffers = order.applied_offers || {};
+        const hasAppOffer = !!appliedOffers.app_offer;
+        const hasStoreDeliveryOffer = Object.keys(appliedOffers).some(key => key.endsWith('_delivery'));
+
+        if (hasAppOffer && !hasStoreDeliveryOffer) return 0;
+
         const rFee = Number(order.rider_delivery_fee ?? 0);
         return rFee > 0 ? rFee : Number(order.delivery_fee ?? 0);
       };
