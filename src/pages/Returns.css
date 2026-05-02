@@ -107,8 +107,13 @@
 
 .status-pending { background: #fef3c7; color: #92400e; }
 .status-approved { background: #dcfce7; color: #166534; }
-.status-rejected { background: #fee2e2; color: #991b1b; }
+.status-rejected { background: #fee2e2; color: #dc2626; }
 .status-returned { background: #e0e7ff; color: #3730a3; }
+.status-completed { background: #dcfce7; color: #166534; }
+.status-rider_assigned { background: #e0f2fe; color: #0369a1; }
+.status-picked_up_from_customer { background: #fef3c7; color: #92400e; }
+.status-dropped_at_store { background: #f0fdf4; color: #166534; }
+.status-delivering_exchange { background: #fae8ff; color: #a21caf; }
 .status-refund_paid { background: #dcfce7; color: #166534; }
 
 .return-details-grid {

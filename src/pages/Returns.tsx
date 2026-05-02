@@ -166,8 +166,18 @@ const Returns: React.FC = () => {
         return <span className="status-badge status-rejected">Rejected</span>;
       case 'returned':
         return <span className="status-badge status-returned">Returned</span>;
+      case 'completed':
+        return <span className="status-badge status-completed">Completed</span>;
+      case 'rider_assigned':
+        return <span className="status-badge status-rider_assigned">Rider Assigned</span>;
+      case 'picked_up_from_customer':
+        return <span className="status-badge status-picked_up_from_customer">Picked Up</span>;
+      case 'dropped_at_store':
+        return <span className="status-badge status-dropped_at_store">Dropped at Store</span>;
+      case 'delivering_exchange':
+        return <span className="status-badge status-delivering_exchange">Delivering Exchange</span>;
       default:
-        return <span className="status-badge">{status}</span>;
+        return <span className="status-badge">{status.replace(/_/g, ' ')}</span>;
     }
   };
 
@@ -302,6 +312,13 @@ const Returns: React.FC = () => {
                       <div className="return-status-message success">
                         <CheckCircle size={16} />
                         Request approved {request.updated_at ? `on ${new Date(request.updated_at).toLocaleDateString()}` : ''}
+                      </div>
+                    )}
+                    
+                    {request.status === 'completed' && (
+                      <div className="return-status-message success">
+                        <CheckCircle size={16} />
+                        Return completed {request.updated_at ? `on ${new Date(request.updated_at).toLocaleDateString()}` : ''}
                       </div>
                     )}
                   </div>
