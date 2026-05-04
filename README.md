@@ -14,6 +14,9 @@ A comprehensive, high-performance administrative dashboard built with React, Typ
 - **System Notifications**: Manage and dispatch platform-wide or targeted notifications.
 - **Media Management**: Centralized hub for managing product and store imagery.
 
+  <img width="1920" height="1080" alt="adminwebapp" src="https://github.com/user-attachments/assets/22622eda-d3ab-4825-9b2d-98a87ffe10bb" />
+
+
 ## 🛠️ Tech Stack
 
 - **Frontend**: [React 19](https://react.dev/)
