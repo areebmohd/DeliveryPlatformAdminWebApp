@@ -95,7 +95,8 @@ const Deliveries: React.FC = () => {
   const groupOrdersByDate = useCallback((orders: Order[]) => {
     if (!orders || orders.length === 0) return [];
 
-    const groups: { [key: string]: Order[] } = {};
+    const groups: { [key: string]: any[] } = {};
+    const batches: { [key: string]: any } = {};
 
     orders.forEach((order) => {
       const date = new Date(order.created_at);
@@ -117,7 +118,32 @@ const Deliveries: React.FC = () => {
       }
 
       if (!groups[dateString]) groups[dateString] = [];
-      groups[dateString].push(order);
+
+      if (order.delivery_slot) {
+        let normalizedSlot = order.delivery_slot;
+        const upperSlot = normalizedSlot.toUpperCase();
+        if (upperSlot === '2 PM' || upperSlot === '2:00 PM') normalizedSlot = '2-3 PM';
+        
+        const slotKey = `${dateString}_${normalizedSlot.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}`;
+        
+        if (!batches[slotKey]) {
+          batches[slotKey] = {
+            id: slotKey,
+            isBatch: true,
+            delivery_slot: normalizedSlot,
+            date_label: dateString,
+            orders: [],
+            rider_id: order.rider_id,
+            status: order.status
+          };
+          groups[dateString].push(batches[slotKey]);
+        }
+        
+        if (order.rider_id) batches[slotKey].rider_id = order.rider_id;
+        batches[slotKey].orders.push(order);
+      } else {
+        groups[dateString].push(order);
+      }
     });
 
     return Object.keys(groups).map((date) => ({
@@ -261,7 +287,70 @@ const Deliveries: React.FC = () => {
         <section key={section.title} className="section-group">
           <h2 className="section-title">{section.title}</h2>
           <div className="deliveries-list">
-            {section.data.map((order) => {
+            {section.data.map((item: any) => {
+              if (item.isBatch) {
+                const isAvailable = item.rider_id === null;
+                const firstOrder = item.orders[0];
+                const rider = firstOrder.rider;
+
+                return (
+                  <div key={item.id} className="batch-card">
+                    <div className="batch-header">
+                      <div className="batch-title">
+                        <h3>{item.delivery_slot} Batch</h3>
+                        <div className="batch-meta">{item.orders.length} Orders • {item.date_label}</div>
+                      </div>
+                      <div 
+                        className="status-badge" 
+                        style={{ backgroundColor: isAvailable ? '#f39c12' : '#27ae60' }}
+                      >
+                        {isAvailable ? 'Unassigned' : 'Assigned'}
+                      </div>
+                    </div>
+                    <div className="batch-body">
+                      {item.orders.map((order: any) => {
+                        const address = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
+                        return (
+                          <div key={order.id} className="batch-order-item">
+                            <div className="batch-order-header">
+                              <span className="batch-order-number">#{order.order_number}</span>
+                              <div 
+                                className="status-badge" 
+                                style={{ backgroundColor: getStatusColor(order.status), padding: '0.2rem 0.5rem', fontSize: '0.65rem' }}
+                              >
+                                {getStatusLabel(order.status)}
+                              </div>
+                            </div>
+                            <div className="batch-customer">{order.customer?.full_name || address?.receiver_name || 'Customer'}</div>
+                            <div className="batch-address">{address?.address_line}, {address?.city}</div>
+                            <div className="batch-order-footer">
+                              <button className="view-details-link" onClick={() => setSelectedOrder(order)}>
+                                View Details & Breakdown
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {item.rider_id && (
+                      <div className="batch-footer">
+                        <div className="rider-box" style={{ marginTop: 0, padding: '0.5rem 0' }}>
+                           <div className="rider-avatar" style={{ width: 32, height: 32 }}><Bike size={16} /></div>
+                           <div className="rider-info">
+                             <div className="rider-status">Assigned Rider</div>
+                             <div className="rider-name">{rider?.full_name}</div>
+                           </div>
+                           <a href={`tel:${rider?.phone}`} className="rider-phone">
+                             <Phone size={14} /> {rider?.phone}
+                           </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              const order = item;
               const rider = order.rider;
               const address = Array.isArray(order.addresses) ? order.addresses[0] : order.addresses;
               const customerName = order.customer?.full_name || address?.receiver_name || 'Customer';
