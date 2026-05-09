@@ -21,12 +21,13 @@ const Stores: React.FC = () => {
   const navigate = useNavigate();
   const [storeSections, setStoreSections] = useState<StoreSection[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unactive' | 'unverified'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unactive' | 'unverified' | 'closed'>('all');
 
   const processStores = useCallback((stores: Store[], filter: string) => {
     const filtered = stores.filter(store => {
       if (filter === 'unactive') return !store.is_active;
       if (filter === 'unverified') return store.has_pending_changes;
+      if (filter === 'closed') return !store.is_currently_open;
       return true;
     });
 
@@ -91,7 +92,7 @@ const Stores: React.FC = () => {
         </div>
 
         <div className="tab-bar">
-          {(['all', 'unactive', 'unverified'] as const).map(filter => (
+          {(['all', 'unactive', 'unverified', 'closed'] as const).map(filter => (
             <button 
               key={filter}
               className={`tab-btn ${activeFilter === filter ? 'active' : ''}`}
@@ -181,6 +182,11 @@ const StoreCard: React.FC<{ store: Store; onClick: (id: string) => void }> = mem
         <div className={`store-badge ${store.is_active ? 'active' : 'inactive'}`}>
           {store.is_active ? 'Active' : 'Inactive'}
         </div>
+        {!store.is_currently_open && (
+          <div className="store-badge unverified">
+            Closed
+          </div>
+        )}
       </div>
     </div>
   </motion.div>

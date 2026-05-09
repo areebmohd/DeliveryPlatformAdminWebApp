@@ -356,7 +356,7 @@ const Orders: React.FC = () => {
                     <Tag size={16} className="offer-icon" />
                     <div className="offer-details">
                       <h4>App Offer</h4>
-                      <p>Free delivery above ₹99</p>
+                      <p>Free batch delivery above ₹29</p>
                     </div>
                   </div>
                 )}

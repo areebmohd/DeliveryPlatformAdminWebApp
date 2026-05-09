@@ -54,6 +54,7 @@ export interface Store {
   banner_url: string | null;
   is_active: boolean;
   is_approved: boolean;
+  is_currently_open: boolean;
   has_pending_changes: boolean;
   created_at: string;
   owner_name: string | null;
