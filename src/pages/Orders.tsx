@@ -57,6 +57,8 @@ interface Order {
   helper_fee?: number;
   store_delivery_fees?: Record<string, number>;
   transport_type?: string;
+  delivery_type?: string;
+  delivery_slot?: string;
 }
 
 interface OrderSection {
@@ -259,7 +261,11 @@ const Orders: React.FC = () => {
                     <div className="order-meta">
                       <Clock size={14} />
                       {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      {order.transport_type && ` • ${order.transport_type === 'heavy' ? 'Truck' : 'Bike'}`}
+                      {order.delivery_type === 'batch' ? (
+                        ` • ${order.delivery_slot || 'Batch'}`
+                      ) : (
+                        order.transport_type && ` • ${order.transport_type === 'heavy' ? 'Truck' : 'Bike'}`
+                      )}
                     </div>
                   </div>
                   <div 
