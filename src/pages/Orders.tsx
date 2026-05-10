@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '../services/supabaseClient';
 import { 
   ClipboardList, 
@@ -7,17 +7,11 @@ import {
   Truck, 
   X, 
   Clock, 
-  CheckCircle2, 
-  AlertCircle,
-  XCircle,
-  HelpCircle,
-  ChevronRight,
   Loader2
 } from 'lucide-react';
 import { 
   getItemTotals, 
   getRiderDeliveryFee, 
-  getSponsoredDeliveryFee, 
   getDisplayPlatformFee 
 } from '../utils/orderUtils';
 import './Orders.css';
@@ -287,7 +281,7 @@ const Orders: React.FC = () => {
                       acc[storeId].items.push(oi);
                       return acc;
                     }, {})
-                  ).map(([storeId, storeData]: [string, any], sIdx) => {
+                  ).map(([storeId, storeData]: [string, any]) => {
                     const storeOffer = order.applied_offers?.[storeId];
                     const deliveryOffer = order.applied_offers?.[`${storeId}_delivery`];
 
