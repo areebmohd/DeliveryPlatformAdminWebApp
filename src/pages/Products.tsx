@@ -32,8 +32,13 @@ const Products: React.FC = () => {
       let query = supabase
         .from('products')
         .select('*, stores(name)')
-        .eq('product_type', activeTab)
         .eq('is_deleted', false);
+
+      if (activeTab === 'barcode') {
+        query = query.or('product_type.eq.barcode,product_type.is.null');
+      } else {
+        query = query.eq('product_type', activeTab);
+      }
 
       if (activeTab === 'barcode') {
         if (barcodeFilter === 'uncomplete') {
@@ -52,20 +57,8 @@ const Products: React.FC = () => {
 
       let fetchedData = (data as ProductWithStore[]) || [];
 
-      // Group identical products
-      const productMap = new Map<string, ProductWithStore>();
-      
-      fetchedData.forEach(p => {
-        const key = `${p.name}|${p.price}|${p.weight_kg || ''}|${p.description || ''}|${JSON.stringify(p.options || [])}`;
-        if (productMap.has(key)) {
-          const existing = productMap.get(key)!;
-          existing.storeCount = (existing.storeCount || 1) + 1;
-        } else {
-          productMap.set(key, { ...p, storeCount: 1 });
-        }
-      });
-
-      let finalData = Array.from(productMap.values());
+      // Show all products separately as requested (no grouping)
+      let finalData = fetchedData.map(p => ({ ...p, storeCount: 1 }));
 
       // Deduplicate by barcode for uncomplete barcode products (User Request)
       if (activeTab === 'barcode' && barcodeFilter === 'uncomplete') {
@@ -286,9 +279,7 @@ const ProductItem: React.FC<ProductItemProps> = memo(({ product, activeTab, uplo
         <div style={{ marginTop: 'auto', paddingTop: '6px', borderTop: '1px solid #f2f2f7', display: 'flex', alignItems: 'center', gap: '4px' }}>
           <StoreIcon size={13} color="var(--primary)" />
           <span style={{ fontSize: '0.7rem', color: 'var(--primary)', fontWeight: 600 }}>
-            {product.storeCount && product.storeCount > 1 
-              ? 'Available in multiple stores' 
-              : product.stores?.name || 'Unknown'}
+            {product.stores?.name || 'Unknown'}
           </span>
         </div>
       </div>

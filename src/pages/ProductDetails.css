@@ -15,7 +15,7 @@
   flex-shrink: 0;
   background: #F8F8F8;
   overflow: hidden;
-  border-right: 1px solid var(--border);
+  border-right: 1px solid #F2F2F7;
   display: flex;
   flex-direction: column;
   align-self: flex-start;
@@ -146,6 +146,7 @@
   font-size: 18px;
   font-weight: 800;
   margin-bottom: 1rem;
+  color: #000000;
 }
 
 .product-details-spec-list {
@@ -164,7 +165,7 @@
   flex-direction: row;
   border-bottom: 1px solid #F2F2F7;
   min-height: 52px;
-  align-items: stretch;
+  align-items: center;
 }
 
 .product-details-option-values {
@@ -290,6 +291,7 @@
   font-size: 20px;
   font-weight: 800;
   margin-bottom: 1.5rem;
+  color: #000000;
 }
 
 .product-edit-group {
@@ -301,33 +303,58 @@
   font-weight: 800;
   color: #8E8E93;
   text-transform: uppercase;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   margin-left: 4px;
   display: block;
+  letter-spacing: 0.5px;
 }
 
 .product-edit-input {
   width: 100%;
-  background: #F2F2F7;
+  background: #F9F9FB;
   border: 1px solid #E5E5EA;
   border-radius: 12px;
-  padding: 12px;
-  font-size: 16px;
+  padding: 14px;
+  font-size: 15px;
+  font-weight: 600;
   font-family: inherit;
+  transition: all 0.2s;
+  color: #1C1C1E;
+}
+
+.product-edit-section-title-black {
+  font-size: 18px;
+  font-weight: 800;
+  color: #000000;
+  margin-bottom: 1.2rem;
+  margin-top: 0.5rem;
+}
+
+.product-edit-input:focus {
+  border-color: var(--primary);
+  background: white;
+  box-shadow: 0 0 0 4px rgba(0, 123, 255, 0.1);
+  outline: none;
 }
 
 .product-edit-select-btn {
   width: 100%;
-  background: #F2F2F7;
+  background: #F9F9FB;
   border: 1px solid #E5E5EA;
   border-radius: 12px;
-  padding: 12px;
-  font-size: 16px;
+  padding: 14px;
+  font-size: 15px;
   text-align: left;
   display: flex;
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
+  transition: all 0.2s;
+}
+
+.product-edit-select-btn:hover {
+  background: #F2F2F7;
+  border-color: #D1D1D6;
 }
 
 .product-edit-grid {
@@ -450,6 +477,18 @@
   border: none;
   background: var(--primary);
   color: white;
+  box-shadow: 0 4px 12px rgba(0, 123, 255, 0.2);
+  transition: all 0.2s;
+}
+
+.product-edit-action-btn.primary:hover {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.product-edit-action-btn.danger:hover {
+  background: #FFF5F5;
+  transform: translateY(-2px);
 }
 
 

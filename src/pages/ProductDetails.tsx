@@ -14,10 +14,12 @@ import {
   X,
   XCircle,
   Edit2,
-  CheckCircle2
+  CheckCircle2,
+  Store as StoreIcon
 } from 'lucide-react';
 import { PRODUCT_CATEGORIES } from '../constants/productCategories';
 import type { Product, SpecItem } from '../types';
+
 import './ProductDetails.css';
 
 const ProductDetails: React.FC = () => {
@@ -28,7 +30,8 @@ const ProductDetails: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [isPickerVisible, setIsPickerVisible] = useState(false);
-  const [globalStoreCount, setGlobalStoreCount] = useState(1);
+  const [productType, setProductType] = useState<'barcode' | 'common' | 'personal'>('barcode');
+  const [barcode, setBarcode] = useState('');
   
   // Form States
   const [name, setName] = useState('');
@@ -37,12 +40,18 @@ const ProductDetails: React.FC = () => {
   const [category, setCategory] = useState('');
   const [deliveryVehicle, setDeliveryVehicle] = useState<'bike' | 'truck'>('bike');
   const [descriptionPairs, setDescriptionPairs] = useState<SpecItem[]>([]);
-  const [productOptions, setProductOptions] = useState<{ title: string; values: string[] }[]>([]);
+  const [productOptions, setProductOptions] = useState<{ title: string; values: any[] }[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [uploading, setUploading] = useState(false);
 
+
   const fetchProduct = useCallback(async () => {
+    if (id === 'new') {
+      navigate('/products', { replace: true });
+      return;
+    }
+
     try {
       setLoading(true);
       const { data, error } = await supabase
@@ -55,14 +64,6 @@ const ProductDetails: React.FC = () => {
       const productData = data as Product;
       setProduct(productData);
       
-      // Fetch global store count
-      const { count: gCount, error: gError } = await supabase
-        .from('products')
-        .select('*', { count: 'exact', head: true })
-        .eq(productData.barcode ? 'barcode' : 'name', productData.barcode || productData.name)
-        .neq('is_deleted', true);
-      
-      if (!gError) setGlobalStoreCount(gCount || 1);
       
       // Initialize form
       setName(productData.name || '');
@@ -70,30 +71,45 @@ const ProductDetails: React.FC = () => {
       setWeight(productData.weight_kg?.toString() || '0');
       setCategory(productData.category || '');
       setDeliveryVehicle(productData.delivery_vehicle || 'bike');
+      setProductType(productData.product_type as any || 'barcode');
+      setBarcode(productData.barcode || '');
+      setSelectedStoreId(productData.store_id || '');
       
       try {
         if (!productData.description) {
           setDescriptionPairs([{ title: '', text: '' }]);
         } else {
-          const parsed = JSON.parse(productData.description);
+          let parsed;
+          if (typeof productData.description === 'object') {
+            parsed = productData.description;
+          } else {
+            parsed = JSON.parse(productData.description);
+          }
+
           if (Array.isArray(parsed)) {
             setDescriptionPairs(parsed.length > 0 ? parsed : [{ title: '', text: '' }]);
           } else {
-            setDescriptionPairs([{ title: 'Description', text: productData.description }]);
+            setDescriptionPairs([{ title: 'Description', text: typeof parsed === 'string' ? parsed : JSON.stringify(parsed) }]);
           }
         }
       } catch {
-        setDescriptionPairs([{ title: 'Description', text: productData.description || '' }]);
+        setDescriptionPairs([{ title: 'Description', text: String(productData.description || '') }]);
       }
       
-      setProductOptions(productData.options || []);
-      setTags(productData.tags || []);
+      const normalizedOptions = (productData.options || []).map((opt: any) => ({
+        ...opt,
+        values: (opt.values || []).map((v: any) => 
+          typeof v === 'string' ? { value: v, price_adjustment: 0 } : v
+        )
+      }));
+      setProductOptions(normalizedOptions);
+      setTags(Array.isArray(productData.tags) ? productData.tags : []);
     } catch (error: unknown) {
       console.error('Error fetching product:', (error as Error).message);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, navigate]);
 
   useEffect(() => {
     if (id) fetchProduct();
@@ -122,7 +138,7 @@ const ProductDetails: React.FC = () => {
       const { error: updateError } = await supabase
         .from('products')
         .update({ image_url: publicUrl })
-        .eq('id', product.id);
+        .eq('name', product.name); // Sync image for all products with the same name
 
       if (updateError) throw updateError;
 
@@ -133,10 +149,9 @@ const ProductDetails: React.FC = () => {
     } finally {
       setUploading(false);
     }
-  }, [product]);
+  }, [product, fetchProduct]);
 
   const handleSave = useCallback(async () => {
-    if (!product) return;
     if (!name || isNaN(parseFloat(price))) {
       alert('Name and valid Price are required.');
       return;
@@ -145,35 +160,54 @@ const ProductDetails: React.FC = () => {
     try {
       setSaving(true);
       const validPairs = descriptionPairs.filter(p => p.title.trim() || p.text.trim());
-      const isComplete = !!name && !!product.image_url && !!price && !!category;
+      const isComplete = !!name && !!price && !!category;
 
-      const updateData = {
+      const sanitizedOptions = (productOptions || [])
+        .map(o => ({
+          title: (o.title || '').trim(),
+          values: (o.values || [])
+            .filter((v: any) => (typeof v === 'string' ? v : (v.value || '')).trim() !== '')
+            .map((v: any) => ({
+              value: (typeof v === 'string' ? v : (v.value || '')).trim(),
+              price_adjustment: parseFloat(typeof v === 'string' ? '0' : (v.price_adjustment || 0)) || 0
+            }))
+        }))
+        .filter(o => o.title !== '' || o.values.length > 0);
+
+      const saveData: any = {
         name,
         price: parseFloat(price),
         weight_kg: parseFloat(weight) || 0,
         category,
         description: JSON.stringify(validPairs),
-        options: productOptions,
+        options: sanitizedOptions,
         tags: tags,
-        image_url: product.image_url, // Ensure image is synced across all stores
         is_info_complete: isComplete,
         delivery_vehicle: deliveryVehicle,
         needs_changes: false,
         is_wrong_barcode: false,
-        raw_image_url: null, // Clear raw image for all stores once info is official
         updated_at: new Date().toISOString(),
+        product_type: productType,
+        barcode: productType === 'barcode' ? barcode : null,
       };
 
-      let query = supabase.from('products').update(updateData);
+      if (!product) return;
+      saveData.image_url = product.image_url;
+      saveData.raw_image_url = null;
 
-      if (product.product_type === 'barcode' && product.barcode) {
+      let query = supabase.from('products').update(saveData);
+
+      // If it's a barcode product, update all instances across all stores
+      // We handle null product_type as 'barcode' for backward compatibility
+      const isBarcodeProduct = (product.product_type === 'barcode' || !product.product_type) && product.barcode;
+
+      if (isBarcodeProduct && product.barcode) {
         query = query.eq('barcode', product.barcode);
       } else {
         query = query.eq('id', id!);
       }
 
       const { error } = await query;
-
       if (error) throw error;
 
       // Cleanup raw image from storage if it exists
@@ -195,7 +229,7 @@ const ProductDetails: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  }, [product, name, price, weight, category, descriptionPairs, productOptions, tags, deliveryVehicle, id, fetchProduct]);
+  }, [id, name, price, weight, category, descriptionPairs, productOptions, tags, deliveryVehicle, productType, barcode, product, navigate, fetchProduct]);
 
   const handleWrongBarcode = useCallback(async () => {
     if (!product || !window.confirm('Delete this product and notify the store about wrong barcode?')) return;
@@ -265,13 +299,13 @@ const ProductDetails: React.FC = () => {
           <ArrowLeft size={20} /> Back
         </button>
 
-        {product.product_type === 'barcode' && (
+        {id !== 'new' && (
           <button 
             onClick={() => setIsEditing(!isEditing)}
             className={`detail-action-btn ${isEditing ? 'danger' : 'primary'}`}
           >
             {isEditing ? <XCircle size={18} /> : <Edit2 size={16} />}
-            {isEditing ? 'Close' : 'Edit'}
+            {isEditing ? 'Close' : 'Edit Details'}
           </button>
         )}
       </header>
@@ -288,7 +322,7 @@ const ProductDetails: React.FC = () => {
             </div>
           )}
 
-          {product.product_type !== 'personal' && (
+          {id !== 'new' && product.product_type !== 'personal' && (
             <label className="product-details-upload-btn">
               <input type="file" accept="image/*" onChange={handlePickImage} style={{ display: 'none' }} disabled={uploading} />
               {uploading ? <Loader2 className="animate-spin" size={20} /> : <Camera size={20} />}
@@ -309,34 +343,32 @@ const ProductDetails: React.FC = () => {
           {!isEditing ? (
             <>
               {/* View Mode */}
-              <div style={{ marginBottom: '1.5rem' }}>
                 <div className="product-details-title-row">
-                  <h1 className="product-details-title">{product.name}</h1>
-                  <span className="product-details-category-badge">{product.category || 'Uncategorized'}</span>
+                  <h1 className="product-details-title">{String(product.name || 'Unknown Product')}</h1>
+                  <span className="product-details-category-badge">{String(product.category || 'Uncategorized')}</span>
                 </div>
 
                 <div className="product-details-price-row">
-                  <span className="product-details-price">₹{product.price}</span>
+                  <span className="product-details-price">₹{typeof product.price === 'number' ? product.price : parseFloat(String(product.price || 0)) || 0}</span>
                   {product.weight_kg !== null && (
-                    <span className="product-details-weight"> • {product.weight_kg} kg</span>
+                    <span className="product-details-weight"> • {typeof product.weight_kg === 'number' ? product.weight_kg : parseFloat(String(product.weight_kg || 0)) || 0} kg</span>
                   )}
-                  <div className={`product-details-type-badge ${product.product_type}`}>
-                    {product.product_type}
+                  <div className={`product-details-type-badge ${String(product.product_type || 'barcode')}`}>
+                    {String(product.product_type || 'barcode')}
                   </div>
                 </div>
-              </div>
 
               <div className="product-details-divider" />
 
               <div style={{ marginBottom: '2rem' }}>
                 <h3 className="product-details-section-title">Description & Specs</h3>
                 <div className="product-details-spec-list">
-                  {descriptionPairs.filter(p => p.title || p.text).map((pair, idx) => (
+                  {descriptionPairs.filter(p => p && (p.title || p.text)).map((pair, idx) => (
                     <div key={idx} className="product-details-spec-item">
                       <span className="product-details-spec-title">
                         {pair.title || 'Info'}
                       </span>
-                      <p className="product-details-spec-value">{pair.text}</p>
+                      <p className="product-details-spec-value">{String(pair.text || '')}</p>
                     </div>
                   ))}
                   {descriptionPairs.filter(p => p.title || p.text).length === 0 && (
@@ -354,8 +386,8 @@ const ProductDetails: React.FC = () => {
                     <span className="product-details-spec-title">Synonyms</span>
                     <div className="product-details-spec-value">
                       <div className="product-details-option-values">
-                        {tags && tags.length > 0 ? tags.map((tag, idx) => (
-                          <span key={idx} className="option-value-chip">{tag}</span>
+                        {Array.isArray(tags) && tags.length > 0 ? tags.map((tag, idx) => (
+                          tag ? <span key={idx} className="option-value-chip">{tag}</span> : null
                         )) : <span style={{ color: '#8E8E93' }}>No tags defined</span>}
                       </div>
                     </div>
@@ -366,18 +398,32 @@ const ProductDetails: React.FC = () => {
               <div style={{ marginBottom: '2rem' }}>
                 <h3 className="product-details-section-title">Product Options (Variants)</h3>
                 <div className="product-details-spec-list">
-                  {productOptions && productOptions.length > 0 ? productOptions.map((opt, idx) => (
-                    <div key={idx} className="product-details-spec-item">
-                      <span className="product-details-spec-title">{opt.title}</span>
-                      <div className="product-details-spec-value">
-                        <div className="product-details-option-values">
-                          {opt.values.map((v, vIdx) => (
-                            <span key={vIdx} className="option-value-chip">{v}</span>
-                          ))}
+                  {(() => {
+                    const validOptions = Array.isArray(productOptions) ? productOptions.filter(opt => opt && opt.title) : [];
+                    if (!productOptions || productOptions.filter(o => o.title?.trim() || (o.values && o.values.length > 0)).length === 0) {
+                      return (
+                        <div className="product-details-spec-item">
+                          <div className="product-details-spec-value" style={{ color: '#8E8E93' }}>No variants available</div>
+                        </div>
+                      );
+                    }
+                    return validOptions.map((opt, idx) => (
+                      <div key={idx} className="product-details-spec-item">
+                        <span className="product-details-spec-title">{opt.title}</span>
+                        <div className="product-details-spec-value">
+                          <div className="product-details-option-values">
+                            {Array.isArray(opt.values) && opt.values.map((v, vIdx) => {
+                              const val = v as any;
+                              const displayValue = typeof val === 'object' && val !== null 
+                                ? `${val.value || 'N/A'}${val.price_adjustment ? ` (+₹${val.price_adjustment})` : ''}`
+                                : String(val);
+                              return <span key={vIdx} className="option-value-chip">{displayValue}</span>;
+                            })}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  )) : <div className="product-details-spec-item"><div className="product-details-spec-value" style={{ color: '#8E8E93' }}>No variants defined</div></div>}
+                    ));
+                  })()}
                 </div>
               </div>
 
@@ -385,20 +431,14 @@ const ProductDetails: React.FC = () => {
 
               <div style={{ marginBottom: '2rem' }}>
                 <h3 className="product-details-section-title">Store</h3>
-                {globalStoreCount > 1 ? (
-                  <p className="product-details-spec-value" style={{ paddingLeft: 0, marginTop: '0.5rem' }}>
-                    Available in {globalStoreCount} Stores
-                  </p>
-                ) : (
-                  product.stores && (
-                    <button 
-                      onClick={() => navigate(`/stores/${product.stores!.id}`)}
-                      className="product-details-store-link-inline"
-                    >
-                      {product.stores!.name}
-                      <ChevronRight size={16} />
-                    </button>
-                  )
+                {product.stores && (
+                  <button 
+                    onClick={() => navigate(`/stores/${product.stores!.id}`)}
+                    className="product-details-store-link-inline"
+                  >
+                    {String(product.stores!.name || 'Unknown Store')}
+                    <ChevronRight size={16} />
+                  </button>
                 )}
               </div>
 
@@ -419,62 +459,123 @@ const ProductDetails: React.FC = () => {
             </>
           ) : (
             <>
-              {/* Edit Mode */}
+              {/* Edit Mode - Premium Business Style */}
               <div className="product-edit-form">
-                <h2 className="product-edit-title">Edit Product Information</h2>
-                
-                <div className="product-edit-group">
-                  <label className="product-edit-label">Product Name</label>
-                  <input 
-                    value={name} 
-                    onChange={e => setName(e.target.value)} 
-                    className="product-edit-input" 
-                  />
-                </div>
+                <div className="card store-info-section-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+                  <h2 className="product-edit-title" style={{ color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <Package size={24} />
+                    {id === 'new' ? 'Create New Product' : 'Edit Product Information'}
+                  </h2>
+                  
+                  <div className="product-edit-group">
+                    <h3 className="product-edit-section-title-black">Basic Details</h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      <div className="product-edit-group">
+                        <label className="product-edit-label">Product Name</label>
+                        <input 
+                          value={name} 
+                          onChange={e => setName(e.target.value)} 
+                          className="product-edit-input" 
+                          placeholder="Enter product name"
+                        />
+                      </div>
 
-                <div className="product-edit-group">
-                  <label className="product-edit-label">Category</label>
-                  <button 
-                    onClick={() => setIsPickerVisible(true)}
-                    className="product-edit-select-btn"
-                  >
-                    <span style={{ color: category ? '#1C1C1E' : '#999', fontWeight: 600 }}>{category || 'Select Category'}</span>
-                    <ChevronRight size={18} color="#007bff" />
-                  </button>
-                </div>
-
-                  <div className="product-edit-grid">
-                    <div>
-                      <label className="product-edit-label">Price (₹)</label>
-                      <input 
-                        type="text"
-                        inputMode="decimal"
-                        value={price} 
-                        onChange={e => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
-                          if (val.split('.').length <= 2) setPrice(val);
-                        }} 
-                        className="product-edit-input" 
-                        placeholder="0"
-                      />
-                    </div>
-                    <div>
-                      <label className="product-edit-label">Weight (kg)</label>
-                      <input 
-                        type="text"
-                        inputMode="decimal"
-                        value={weight} 
-                        onChange={e => {
-                          const val = e.target.value.replace(/[^0-9.]/g, '');
-                          if (val.split('.').length <= 2) setWeight(val);
-                        }} 
-                        className="product-edit-input" 
-                        placeholder="0"
-                      />
+                      <div className="product-edit-grid" style={{ marginBottom: 0 }}>
+                        <div>
+                          <label className="product-edit-label">Product Type</label>
+                          <select 
+                            value={productType} 
+                            onChange={e => setProductType(e.target.value as any)}
+                            className="product-edit-input"
+                            style={{ height: '48px' }}
+                          >
+                            <option value="barcode">Barcode (Global)</option>
+                            <option value="common">Common (Shared)</option>
+                            <option value="personal">Personal (Store Specific)</option>
+                          </select>
+                        </div>
+                        {productType === 'barcode' && (
+                          <div>
+                            <label className="product-edit-label">Barcode</label>
+                            <input 
+                              value={barcode} 
+                              onChange={e => setBarcode(e.target.value)} 
+                              className="product-edit-input" 
+                              placeholder="Scan or enter barcode"
+                            />
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {product.product_type === 'barcode' && (
+                  <div className="product-details-divider" />
+
+                  <div className="product-edit-group">
+                    <h3 className="product-edit-section-title-black">Classification & Pricing</h3>
+                    <div className="product-edit-grid" style={{ marginBottom: '1rem' }}>
+                      <div>
+                        <label className="product-edit-label">Category</label>
+                        <button 
+                          onClick={() => setIsPickerVisible(true)}
+                          className="product-edit-select-btn"
+                        >
+                          <span style={{ color: category ? '#1C1C1E' : '#999', fontWeight: 600 }}>{category || 'Select Category'}</span>
+                          <ChevronRight size={18} color="var(--primary)" />
+                        </button>
+                      </div>
+                      {id === 'new' && (
+                        <div>
+                          <label className="product-edit-label">Assign to Store</label>
+                          <button 
+                            onClick={() => setIsStorePickerVisible(true)}
+                            className="product-edit-select-btn"
+                          >
+                            <span style={{ color: selectedStoreId ? '#1C1C1E' : '#999', fontWeight: 600 }}>
+                              {selectedStoreId ? stores.find(s => s.id === selectedStoreId)?.name : 'Select Store'}
+                            </span>
+                            <ChevronRight size={18} color="var(--primary)" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="product-edit-grid">
+                      <div>
+                        <label className="product-edit-label">Price (₹)</label>
+                        <input 
+                          type="text"
+                          inputMode="decimal"
+                          value={price} 
+                          onChange={e => {
+                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                            if (val.split('.').length <= 2) setPrice(val);
+                          }} 
+                          className="product-edit-input" 
+                          placeholder="0"
+                        />
+                      </div>
+                      <div>
+                        <label className="product-edit-label">Weight (kg)</label>
+                        <input 
+                          type="text"
+                          inputMode="decimal"
+                          value={weight} 
+                          onChange={e => {
+                            const val = e.target.value.replace(/[^0-9.]/g, '');
+                            if (val.split('.').length <= 2) setWeight(val);
+                          }} 
+                          className="product-edit-input" 
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="product-details-divider" />
+
+                  <div className="product-edit-group">
+                    <h3 className="product-edit-section-title-black">Logistics</h3>
                     <div className="product-edit-group">
                       <label className="product-edit-label">Delivery Vehicle</label>
                       <div className="vehicle-selector">
@@ -492,91 +593,92 @@ const ProductDetails: React.FC = () => {
                         </button>
                       </div>
                     </div>
-                  )}
+                  </div>
+                </div>
 
-                <div className="product-edit-specs-section">
+                <div className="card store-info-section-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
                   <div className="product-edit-specs-header">
                     <h3 className="product-details-section-title" style={{ marginBottom: 0 }}>Specifications</h3>
                     <button onClick={addSpecPair} className="product-edit-add-spec-btn">
                       <Plus size={24} />
                     </button>
                   </div>
-                  <div className="product-details-spec-list">
-                    {descriptionPairs.map((pair, idx) => (
-                      <div key={idx} className="product-edit-spec-item">
-                        <div className="product-edit-spec-title-row">
-                          <input 
-                            placeholder="e.g. Material" value={pair.title} 
-                            onChange={e => updateSpecPair(idx, 'title', e.target.value)} 
-                            className="product-edit-spec-title-input" 
-                          />
-                          <button onClick={() => removeSpecPair(idx)} className="product-edit-spec-delete-btn">
-                            <Trash2 size={18} />
-                          </button>
+                  <div className="product-details-spec-list" style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}>
+                    {Array.isArray(descriptionPairs) && descriptionPairs.map((pair, idx) => (
+                      pair ? (
+                        <div key={idx} className="product-edit-spec-item" style={{ border: '1px solid #E5E5EA', marginBottom: '12px', borderRadius: '12px' }}>
+                          <div className="product-edit-spec-title-row">
+                            <input 
+                              placeholder="e.g. Material" value={String(pair.title || '')} 
+                              onChange={e => updateSpecPair(idx, 'title', e.target.value)} 
+                              className="product-edit-spec-title-input" 
+                            />
+                            <button onClick={() => removeSpecPair(idx)} className="product-edit-spec-delete-btn">
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          <div style={{ flex: 1, padding: '12px', display: 'flex', alignItems: 'center' }}>
+                            <textarea 
+                              placeholder="Value..." value={String(pair.text || '')} 
+                              onChange={e => updateSpecPair(idx, 'text', e.target.value)} 
+                              className="product-edit-spec-value-textarea" 
+                            />
+                          </div>
                         </div>
-                        <div>
-                          <textarea 
-                            placeholder="Value..." value={pair.text} 
-                            onChange={e => updateSpecPair(idx, 'text', e.target.value)} 
-                            className="product-edit-spec-value-textarea" 
-                          />
-                        </div>
-                      </div>
+                      ) : null
                     ))}
                   </div>
                 </div>
 
-                <div className="product-edit-specs-section">
-                  <div className="product-edit-specs-header">
-                    <h3 className="product-details-section-title" style={{ marginBottom: 0 }}>Tags (Synonyms)</h3>
-                  </div>
-                  <div className="product-edit-group" style={{ marginTop: '1rem' }}>
-                    <div className="tag-input-wrapper" style={{ display: 'flex', gap: '0.5rem' }}>
-                      <input 
-                        placeholder="Add a tag..." 
-                        value={tagInput}
-                        onChange={e => setTagInput(e.target.value)}
-                        onKeyDown={e => {
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            if (tagInput.trim()) {
-                              setTags(prev => [...new Set([...(prev || []), tagInput.trim().toLowerCase()])]);
-                              setTagInput('');
-                            }
-                          }
-                        }}
-                        className="product-edit-input" 
-                      />
-                      <button 
-                        type="button"
-                        onClick={() => {
+                <div className="card store-info-section-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
+                  <h3 className="product-details-section-title">Tags (Synonyms)</h3>
+                  <div className="tag-input-wrapper" style={{ display: 'flex', gap: '0.5rem' }}>
+                    <input 
+                      placeholder="Add a search tag..." 
+                      value={tagInput}
+                      onChange={e => setTagInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
                           if (tagInput.trim()) {
                             setTags(prev => [...new Set([...(prev || []), tagInput.trim().toLowerCase()])]);
                             setTagInput('');
                           }
-                        }}
-                        className="detail-action-btn primary"
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        Add Tag
-                      </button>
-                    </div>
-                    <div className="product-details-option-values" style={{ marginTop: '1rem' }}>
-                      {tags && tags.map((tag, idx) => (
-                        <span key={idx} className="option-value-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                          {tag}
+                        }
+                      }}
+                      className="product-edit-input" 
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        if (tagInput.trim()) {
+                          setTags(prev => [...new Set([...(prev || []), tagInput.trim().toLowerCase()])]);
+                          setTagInput('');
+                        }
+                      }}
+                      className="detail-action-btn primary"
+                      style={{ whiteSpace: 'nowrap', borderRadius: '12px' }}
+                    >
+                      Add
+                    </button>
+                  </div>
+                  <div className="product-details-option-values" style={{ marginTop: '1rem' }}>
+                    {Array.isArray(tags) && tags.map((tag, idx) => (
+                      tag ? (
+                        <span key={idx} className="option-value-chip" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: '#e7f1ff', color: 'var(--primary)', borderColor: 'var(--primary)' }}>
+                          {String(tag)}
                           <X 
                             size={14} 
                             style={{ cursor: 'pointer' }} 
                             onClick={() => setTags(prev => (prev || []).filter((_, i) => i !== idx))} 
                           />
                         </span>
-                      ))}
-                    </div>
+                      ) : null
+                    ))}
                   </div>
                 </div>
 
-                <div className="product-edit-specs-section">
+                <div className="card store-info-section-card" style={{ padding: '2rem', marginBottom: '2rem' }}>
                   <div className="product-edit-specs-header">
                     <h3 className="product-details-section-title" style={{ marginBottom: 0 }}>Options & Variants</h3>
                     <button 
@@ -586,62 +688,119 @@ const ProductDetails: React.FC = () => {
                       <Plus size={24} />
                     </button>
                   </div>
-                  <div className="product-details-spec-list">
-                    {productOptions && productOptions.map((opt, idx) => (
-                      <div key={idx} className="product-edit-spec-item">
-                        <div className="product-edit-spec-title-row">
-                          <input 
-                            placeholder="e.g. Size" 
-                            value={opt.title} 
-                            onChange={e => {
-                               const newOptions = [...productOptions];
-                               newOptions[idx].title = e.target.value;
-                               setProductOptions(newOptions);
-                            }} 
-                            className="product-edit-spec-title-input" 
-                          />
-                          <button 
-                            onClick={() => setProductOptions(productOptions.filter((_, i) => i !== idx))} 
-                            className="product-edit-spec-delete-btn"
-                          >
-                            <Trash2 size={18} />
-                          </button>
+                  <div className="product-details-spec-list" style={{ border: 'none', background: 'transparent', boxShadow: 'none' }}>
+                    {Array.isArray(productOptions) && productOptions.map((opt, idx) => (
+                      opt ? (
+                        <div key={idx} className="product-edit-spec-item" style={{ display: 'block', border: '1px solid #E5E5EA', marginBottom: '20px', borderRadius: '16px', overflow: 'hidden' }}>
+                          <div className="product-edit-spec-title-row" style={{ width: '100%', padding: '12px 20px', borderBottom: '1px solid #E5E5EA' }}>
+                            <input 
+                              placeholder="Option Group Title (e.g. Size, Color)" 
+                              value={String(opt.title || '')} 
+                              onChange={e => {
+                                 const newOptions = [...productOptions];
+                                 newOptions[idx].title = e.target.value;
+                                 setProductOptions(newOptions);
+                              }} 
+                              className="product-edit-spec-title-input" 
+                              style={{ width: '100%', fontSize: '14px', color: '#000' }}
+                            />
+                            <button 
+                              onClick={() => setProductOptions(productOptions.filter((_, i) => i !== idx))} 
+                              className="product-edit-spec-delete-btn"
+                              style={{ marginLeft: '12px' }}
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                          <div style={{ padding: '16px' }}>
+                            {Array.isArray(opt.values) && opt.values.map((v: any, vIdx: number) => (
+                              <div key={vIdx} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' }}>
+                                <div style={{ flex: 2 }}>
+                                  <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Value</label>
+                                  <input 
+                                    placeholder="e.g. Medium" 
+                                    value={typeof v === 'string' ? v : (v.value || '')} 
+                                    onChange={e => {
+                                      const newOptions = [...productOptions];
+                                      const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
+                                        ? { value: newOptions[idx].values[vIdx], price_adjustment: 0 }
+                                        : newOptions[idx].values[vIdx];
+                                      newOptions[idx].values[vIdx] = { ...currentVal, value: e.target.value };
+                                      setProductOptions(newOptions);
+                                    }}
+                                    className="product-edit-input"
+                                    style={{ background: 'white', padding: '10px' }}
+                                  />
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Extra Price (+₹)</label>
+                                  <input 
+                                    placeholder="0" 
+                                    value={typeof v === 'string' ? '0' : (v.price_adjustment || '0')} 
+                                    onChange={e => {
+                                      const newOptions = [...productOptions];
+                                      const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
+                                        ? { value: newOptions[idx].values[vIdx], price_adjustment: 0 }
+                                        : newOptions[idx].values[vIdx];
+                                      newOptions[idx].values[vIdx] = { ...currentVal, price_adjustment: parseFloat(e.target.value) || 0 };
+                                      setProductOptions(newOptions);
+                                    }}
+                                    className="product-edit-input"
+                                    type="number"
+                                    style={{ background: 'white', padding: '10px' }}
+                                  />
+                                </div>
+                                <button 
+                                  onClick={() => {
+                                    const newOptions = [...productOptions];
+                                    newOptions[idx].values = newOptions[idx].values.filter((_: any, i: number) => i !== vIdx);
+                                    setProductOptions(newOptions);
+                                  }}
+                                  style={{ marginTop: '18px', background: 'none', border: 'none', color: '#FF3B30', cursor: 'pointer' }}
+                                >
+                                  <X size={18} />
+                                </button>
+                              </div>
+                            ))}
+                            <button 
+                              onClick={() => {
+                                const newOptions = [...productOptions];
+                                if (!Array.isArray(newOptions[idx].values)) newOptions[idx].values = [];
+                                newOptions[idx].values.push({ value: '', price_adjustment: 0 });
+                                setProductOptions(newOptions);
+                              }}
+                              style={{ background: 'none', border: '1px dashed #D1D1D6', borderRadius: '12px', width: '100%', padding: '10px', color: 'var(--primary)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
+                              type="button"
+                            >
+                              + Add Value
+                            </button>
+                          </div>
                         </div>
-                        <div style={{ flex: 1, padding: '12px' }}>
-                          <input 
-                            placeholder="S, M, L, XL (Comma separated)" 
-                            value={(opt.values || []).join(', ')} 
-                            onChange={e => {
-                               const newOptions = [...productOptions];
-                               newOptions[idx].values = e.target.value.split(',').map(v => v.trim()).filter(v => v !== '');
-                               setProductOptions(newOptions);
-                            }} 
-                            className="product-edit-input" 
-                            style={{ background: 'white' }}
-                          />
-                        </div>
-                      </div>
+                      ) : null
                     ))}
                   </div>
                 </div>
 
-                {/* Bottom Actions Fixed for Mobile Parity */}
-                <div className="product-edit-actions">
-                  <button 
-                    onClick={handleWrongBarcode}
-                    disabled={saving}
-                    className="product-edit-action-btn danger"
-                  >
-                    <BarcodeIcon size={20} />
-                    Wrong Barcode
-                  </button>
+                {/* Bottom Actions */}
+                <div className="product-edit-actions" style={{ position: 'sticky', bottom: '1rem', background: 'rgba(255,255,255,0.95)', padding: '1rem', borderRadius: '20px', boxShadow: '0 -4px 20px rgba(0,0,0,0.05)', backdropFilter: 'blur(10px)', zIndex: 100 }}>
+                  {productType === 'barcode' && id !== 'new' && (
+                    <button 
+                      onClick={handleWrongBarcode}
+                      disabled={saving}
+                      className="product-edit-action-btn danger"
+                    >
+                      <BarcodeIcon size={20} />
+                      Wrong Barcode
+                    </button>
+                  )}
                   <button 
                     onClick={handleSave}
                     disabled={saving}
                     className="product-edit-action-btn primary"
+                    style={{ flex: 2 }}
                   >
                     {saving ? <Loader2 className="animate-spin" size={20} /> : <CheckCircle2 size={20} />}
-                    Save Changes
+                    {id === 'new' ? 'Create Product' : 'Save Changes'}
                   </button>
                 </div>
               </div>
