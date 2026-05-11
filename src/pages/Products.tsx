@@ -23,7 +23,7 @@ const Products: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'barcode' | 'common' | 'personal'>('barcode');
   const [barcodeFilter, setBarcodeFilter] = useState<'all' | 'uncomplete' | 'needs_changes'>('all');
-  const [commonFilter, setCommonFilter] = useState<'all' | 'no_image'>('all');
+  const [commonFilter, setCommonFilter] = useState<'all' | 'require_info'>('all');
   const [uploading, setUploading] = useState<string | null>(null);
 
   const fetchProducts = useCallback(async () => {
@@ -47,8 +47,8 @@ const Products: React.FC = () => {
           query = query.eq('needs_changes', true);
         }
       } else if (activeTab === 'common') {
-        if (commonFilter === 'no_image') {
-          query = query.or('image_url.is.null,image_url.eq.""');
+        if (commonFilter === 'require_info') {
+          query = query.eq('is_info_complete', false);
         }
       }
 
@@ -164,13 +164,13 @@ const Products: React.FC = () => {
 
         {activeTab === 'common' && (
           <div className="pill-tab-group">
-            {(['all', 'no_image'] as const).map((filter) => (
+            {(['all', 'require_info'] as const).map((filter) => (
               <button 
                 key={filter}
                 className={`pill-tab ${commonFilter === filter ? 'active' : ''}`}
                 onClick={() => setCommonFilter(filter)}
               >
-                {filter === 'no_image' ? 'Require Image' : 'All'}
+                {filter === 'require_info' ? 'Require Info' : 'All'}
               </button>
             ))}
           </div>

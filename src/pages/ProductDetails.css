@@ -604,3 +604,49 @@
 .raw-image-full-btn:hover {
   background: rgba(0,0,0,0.9);
 }
+
+.detail-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.detail-action-btn.primary {
+  background: var(--primary);
+  color: white;
+}
+
+.detail-action-btn.secondary {
+  background: #F2F2F7;
+  color: #1C1C1E;
+}
+
+.detail-action-btn.danger {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.detail-action-btn.success {
+  background: #ecfdf5;
+  color: #059669;
+  border-color: #a7f3d0;
+}
+
+.detail-action-btn:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.detail-action-btn:active {
+  transform: translateY(0);
+}

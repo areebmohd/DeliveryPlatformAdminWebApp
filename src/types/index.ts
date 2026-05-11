@@ -13,6 +13,17 @@ export interface DashboardStats {
 
 export type Timeframe = 'daily' | 'weekly' | 'monthly';
 
+export interface MasterProduct {
+  id: string;
+  name: string;
+  category: string;
+  tags: string[] | null;
+  image_url: string | null;
+  is_approved: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -26,6 +37,8 @@ export interface Product {
   is_info_complete: boolean;
   needs_changes: boolean;
   store_id: string;
+  master_product_id: string | null;
+  master_product?: MasterProduct;
   stores?: {
     name: string;
     id: string;

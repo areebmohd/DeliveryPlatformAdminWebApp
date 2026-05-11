@@ -56,7 +56,7 @@ const ProductDetails: React.FC = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('products')
-        .select('*, stores(id, name)')
+        .select('*, stores(id, name), master_product:master_product_id(*)')
         .eq('id', id!)
         .single();
 
@@ -73,7 +73,12 @@ const ProductDetails: React.FC = () => {
       setDeliveryVehicle(productData.delivery_vehicle || 'bike');
       setProductType(productData.product_type as any || 'barcode');
       setBarcode(productData.barcode || '');
-      setSelectedStoreId(productData.store_id || '');
+      // Use master details if available
+      if (productData.master_product) {
+        setName(productData.master_product.name);
+        setCategory(productData.master_product.category);
+        setTags(productData.master_product.tags || []);
+      }
       
       try {
         if (!productData.description) {
@@ -197,8 +202,6 @@ const ProductDetails: React.FC = () => {
 
       let query = supabase.from('products').update(saveData);
 
-      // If it's a barcode product, update all instances across all stores
-      // We handle null product_type as 'barcode' for backward compatibility
       const isBarcodeProduct = (product.product_type === 'barcode' || !product.product_type) && product.barcode;
 
       if (isBarcodeProduct && product.barcode) {
@@ -243,10 +246,10 @@ const ProductDetails: React.FC = () => {
         target_group: 'business',
       });
 
-      // 2. Soft delete
+      // 2. Hard delete
       const { error } = await supabase
         .from('products')
-        .update({ is_deleted: true, raw_image_url: null })
+        .delete()
         .eq('id', product.id);
 
       if (error) throw error;
@@ -282,6 +285,61 @@ const ProductDetails: React.FC = () => {
   const addSpecPair = useCallback(() => setDescriptionPairs(prev => [...prev, { title: '', text: '' }]), []);
   const removeSpecPair = useCallback((idx: number) => setDescriptionPairs(prev => prev.filter((_, i) => i !== idx)), []);
 
+  const handleProductAlreadyAvailable = useCallback(async () => {
+    const confirmDelete = window.confirm(`Are you sure? This will delete "${product.name}" and notify the store that it is already available in the catalog.`);
+    if (!product || !confirmDelete) return;
+
+    try {
+      setSaving(true);
+      // 1. Notify store
+      await supabase.from('notifications').insert({
+        user_id: product.store_id,
+        title: 'Product Already Available',
+        description: `The product "${product.name}" is already available in our catalog. This entry has been removed. Please search and select it from suggestions next time.`,
+        target_group: 'business',
+      });
+
+      // 2. Delete product
+      const { error } = await supabase
+        .from('products')
+        .delete()
+        .eq('id', product.id);
+
+      if (error) throw error;
+
+      alert('Product deleted and store notified.');
+      navigate('/products');
+    } catch (error: unknown) {
+      alert(`Action failed: ${(error as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [product, navigate]);
+
+  const handleAcceptProduct = useCallback(async () => {
+    if (!product || !window.confirm('Accept this product and make it permanent?')) return;
+
+    try {
+      setSaving(true);
+      const { error } = await supabase
+        .from('products')
+        .update({ 
+          is_info_complete: true,
+          needs_changes: false 
+        })
+        .eq('id', product.id);
+
+      if (error) throw error;
+
+      alert('Product accepted successfully.');
+      fetchProduct();
+    } catch (error: unknown) {
+      alert(`Action failed: ${(error as Error).message}`);
+    } finally {
+      setSaving(false);
+    }
+  }, [product, fetchProduct]);
+
   if (loading) {
     return (
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'white' }}>
@@ -299,15 +357,36 @@ const ProductDetails: React.FC = () => {
           <ArrowLeft size={20} /> Back
         </button>
 
-        {id !== 'new' && (
-          <button 
-            onClick={() => setIsEditing(!isEditing)}
-            className={`detail-action-btn ${isEditing ? 'danger' : 'primary'}`}
-          >
-            {isEditing ? <XCircle size={18} /> : <Edit2 size={16} />}
-            {isEditing ? 'Close' : 'Edit Details'}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {!isEditing && product.product_type === 'common' && !product.master_product_id && !product.is_info_complete && (
+            <>
+              <button 
+                onClick={handleProductAlreadyAvailable}
+                className="detail-action-btn danger"
+              >
+                <XCircle size={18} />
+                Already Available (Delete)
+              </button>
+              <button 
+                onClick={handleAcceptProduct}
+                className="detail-action-btn success"
+              >
+                <CheckCircle2 size={18} />
+                Accept Product
+              </button>
+            </>
+          )}
+
+          {id !== 'new' && (
+            <button 
+              onClick={() => setIsEditing(!isEditing)}
+              className={`detail-action-btn ${isEditing ? 'danger' : 'primary'}`}
+            >
+              {isEditing ? <XCircle size={18} /> : <Edit2 size={16} />}
+              {isEditing ? 'Close' : 'Edit Details'}
+            </button>
+          )}
+        </div>
       </header>
 
       <main className="product-details-main">
@@ -791,6 +870,17 @@ const ProductDetails: React.FC = () => {
                     >
                       <BarcodeIcon size={20} />
                       Wrong Barcode
+                    </button>
+                  )}
+                  {product.product_type === 'common' && !product.master_product_id && (
+                    <button 
+                      onClick={handleProductAlreadyAvailable}
+                      disabled={saving}
+                      className="product-edit-action-btn danger"
+                      style={{ flex: 1 }}
+                    >
+                      <XCircle size={20} />
+                      Already Available
                     </button>
                   )}
                   <button 
