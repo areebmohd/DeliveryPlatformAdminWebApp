@@ -9,6 +9,10 @@ export interface DashboardStats {
   products_added: number;
   users_joined: number;
   riders_joined: number;
+  total_stores: number;
+  total_products: number;
+  total_users: number;
+  total_riders: number;
 }
 
 export type Timeframe = 'daily' | 'weekly' | 'monthly';

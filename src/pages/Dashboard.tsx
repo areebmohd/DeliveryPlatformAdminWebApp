@@ -148,6 +148,33 @@ const Dashboard: React.FC = () => {
           icon={<Bike size={32} />} 
           color="#10b981" 
         />
+
+        {/* Overall Platform Metrics */}
+        <div className="section-title">Overall Metrics</div>
+        <StatCard 
+          title="Total Stores" 
+          value={stats?.total_stores || 0} 
+          icon={<Store size={32} />} 
+          color="#8b5cf6" 
+        />
+        <StatCard 
+          title="Total Products" 
+          value={stats?.total_products || 0} 
+          icon={<Package size={32} />} 
+          color="#f97316" 
+        />
+        <StatCard 
+          title="Total Users" 
+          value={stats?.total_users || 0} 
+          icon={<Users size={32} />} 
+          color="#3b82f6" 
+        />
+        <StatCard 
+          title="Total Riders" 
+          value={stats?.total_riders || 0} 
+          icon={<Bike size={32} />} 
+          color="#10b981" 
+        />
       </div>
     </div>
   );
