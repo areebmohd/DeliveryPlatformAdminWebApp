@@ -351,12 +351,16 @@ const Orders: React.FC = () => {
                   })}
                 </div>
 
-                {order.applied_offers?.app_offer && (
+                {(order.applied_offers?.app_offer || order.applied_offers?.app_batch_offer || order.applied_offers?.app_fast_offer) && (
                   <div className="order-app-offer-badge">
                     <Tag size={16} className="offer-icon" />
                     <div className="offer-details">
-                      <h4>App Offer</h4>
-                      <p>Free batch delivery above ₹29</p>
+                      <h4>{order.applied_offers?.app_fast_offer ? 'Free Fast Delivery' : 'Free Batch Delivery'}</h4>
+                      <p>
+                        {order.applied_offers?.app_fast_offer 
+                          ? 'Free fast delivery above ₹149' 
+                          : `Free batch delivery above ₹${order.applied_offers?.app_batch_offer ? '49' : '29'}`}
+                      </p>
                     </div>
                   </div>
                 )}

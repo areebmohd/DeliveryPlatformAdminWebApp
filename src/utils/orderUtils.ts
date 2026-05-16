@@ -87,7 +87,7 @@ export const getRiderDeliveryFee = (order: {
   applied_offers?: any;
 }) => {
   const appliedOffers = order.applied_offers || {};
-  const hasAppOffer = !!appliedOffers.app_offer;
+  const hasAppOffer = !!(appliedOffers.app_offer || appliedOffers.app_batch_offer || appliedOffers.app_fast_offer);
   const hasStoreDeliveryOffer = Object.keys(appliedOffers).some(key => key.endsWith('_delivery'));
 
   // If app offer is applied and NO store delivery offer, rider gets 0 (display purpose)
@@ -130,7 +130,7 @@ export const getDisplayPlatformFee = (order: {
   
   const customerFee = Number(order.delivery_fee ?? 0);
   const appliedOffers = order.applied_offers || {};
-  const hasAppOffer = !!appliedOffers.app_offer;
+  const hasAppOffer = !!(appliedOffers.app_offer || appliedOffers.app_batch_offer || appliedOffers.app_fast_offer);
   const hasStoreDeliveryOffer = Object.keys(appliedOffers).some(key => key.endsWith('_delivery'));
 
   // Effective delivery fee collected from customer
