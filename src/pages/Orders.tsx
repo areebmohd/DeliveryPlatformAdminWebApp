@@ -12,6 +12,7 @@ import {
 import { 
   getItemTotals, 
   getRiderDeliveryFee, 
+  getSponsoredDeliveryFee,
   getDisplayPlatformFee 
 } from '../utils/orderUtils';
 import './Orders.css';
@@ -199,7 +200,9 @@ const Orders: React.FC = () => {
               <h4 className="breakdown-section-title">Fees & Services</h4>
               <div className="breakdown-row">
                 <span className="breakdown-label">Delivery Fee</span>
-                <span className="breakdown-value">₹{riderFee.toFixed(2)}</span>
+                <span className="breakdown-value">
+                  ₹{(Number(selectedOrder.delivery_fee || 0) + getSponsoredDeliveryFee(selectedOrder)).toFixed(2)}
+                </span>
               </div>
               {platformFee > 0 && (
                 <div className="breakdown-row">

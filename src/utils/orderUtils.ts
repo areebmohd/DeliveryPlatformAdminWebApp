@@ -84,15 +84,7 @@ export const getItemTotals = (product: any, allStoreItems: any[], storeOffer: an
 export const getRiderDeliveryFee = (order: {
   rider_delivery_fee?: number | string | null;
   delivery_fee?: number | string | null;
-  applied_offers?: any;
 }) => {
-  const appliedOffers = order.applied_offers || {};
-  const hasAppOffer = !!(appliedOffers.app_offer || appliedOffers.app_batch_offer || appliedOffers.app_fast_offer);
-  const hasStoreDeliveryOffer = Object.keys(appliedOffers).some(key => key.endsWith('_delivery'));
-
-  // If app offer is applied and NO store delivery offer, rider gets 0 (display purpose)
-  if (hasAppOffer && !hasStoreDeliveryOffer) return 0;
-
   const riderFee = order.rider_delivery_fee;
   if (riderFee !== undefined && riderFee !== null) {
     const val = Number(riderFee);
@@ -117,27 +109,6 @@ export const getSponsoredDeliveryFee = (order: {
 
 export const getDisplayPlatformFee = (order: {
   platform_fee?: number | string | null;
-  rider_delivery_fee?: number | string | null;
-  delivery_fee?: number | string | null;
-  store_delivery_fees?: Record<string, number> | null;
-  applied_offers?: any;
 }) => {
-  const platformFee = Number(order.platform_fee ?? 0);
-  const basePlatformFee = Number.isFinite(platformFee) ? platformFee : 0;
-  
-  const riderFee = getRiderDeliveryFee(order);
-  const sponsoredFee = getSponsoredDeliveryFee(order);
-  
-  const customerFee = Number(order.delivery_fee ?? 0);
-  const appliedOffers = order.applied_offers || {};
-  const hasAppOffer = !!(appliedOffers.app_offer || appliedOffers.app_batch_offer || appliedOffers.app_fast_offer);
-  const hasStoreDeliveryOffer = Object.keys(appliedOffers).some(key => key.endsWith('_delivery'));
-
-  // Effective delivery fee collected from customer
-  const collectedDeliveryFee = customerFee;
-
-  // Platform revenue from delivery = (Collected + Sponsored) - PaidToRider
-  const deliverySurplus = collectedDeliveryFee + sponsoredFee - riderFee;
-
-  return basePlatformFee + Math.max(0, deliverySurplus);
+  return Number(order.platform_fee ?? 0);
 };
