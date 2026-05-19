@@ -265,14 +265,30 @@ const StoreDetails: React.FC = () => {
     }
   }, [store, fetchStoreDetails]);
 
+  const formatWhatsAppNumber = useCallback((num: string) => {
+    if (!num) return '';
+    const trimmed = num.trim();
+    if (trimmed.startsWith('+')) {
+      return trimmed.replace(/\D/g, '');
+    }
+    let cleaned = trimmed.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+      cleaned = cleaned.substring(1);
+    }
+    if (cleaned.length === 10) {
+      return `91${cleaned}`;
+    }
+    return cleaned;
+  }, []);
+
   const handleContact = useCallback((type: 'tel' | 'whatsapp' | 'url', value: string) => {
     if (!value) return;
     let url = '';
     if (type === 'tel') url = `tel:${value}`;
-    else if (type === 'whatsapp') url = `https://wa.me/${value.replace(/\D/g, '')}`;
+    else if (type === 'whatsapp') url = `https://wa.me/${formatWhatsAppNumber(value)}`;
     else url = value.startsWith('http') ? value : `https://${value}`;
     window.open(url, '_blank');
-  }, []);
+  }, [formatWhatsAppNumber]);
 
   const openInMap = useCallback(() => {
     if (!store?.location_wkt) return;

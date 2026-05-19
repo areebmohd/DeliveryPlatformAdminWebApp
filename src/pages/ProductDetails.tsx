@@ -104,7 +104,9 @@ const ProductDetails: React.FC = () => {
       const normalizedOptions = (productData.options || []).map((opt: any) => ({
         ...opt,
         values: (opt.values || []).map((v: any) => 
-          typeof v === 'string' ? { value: v, price_adjustment: 0 } : v
+          typeof v === 'string' 
+            ? { value: v, price_adjustment: 0, weight_adjustment: 0 } 
+            : { ...v, price_adjustment: parseFloat(v.price_adjustment) || 0, weight_adjustment: parseFloat(v.weight_adjustment) || 0 }
         )
       }));
       setProductOptions(normalizedOptions);
@@ -174,7 +176,8 @@ const ProductDetails: React.FC = () => {
             .filter((v: any) => (typeof v === 'string' ? v : (v.value || '')).trim() !== '')
             .map((v: any) => ({
               value: (typeof v === 'string' ? v : (v.value || '')).trim(),
-              price_adjustment: parseFloat(typeof v === 'string' ? '0' : (v.price_adjustment || 0)) || 0
+              price_adjustment: parseFloat(typeof v === 'string' ? '0' : (v.price_adjustment || 0)) || 0,
+              weight_adjustment: parseFloat(typeof v === 'string' ? '0' : (v.weight_adjustment || 0)) || 0
             }))
         }))
         .filter(o => o.title !== '' || o.values.length > 0);
@@ -189,6 +192,7 @@ const ProductDetails: React.FC = () => {
         tags: tags,
         is_info_complete: isComplete,
         delivery_vehicle: deliveryVehicle,
+        needs_large_vehicle: deliveryVehicle === 'truck' || (parseFloat(weight) || 0) > 20,
         needs_changes: false,
         is_wrong_barcode: false,
         updated_at: new Date().toISOString(),
@@ -494,7 +498,7 @@ const ProductDetails: React.FC = () => {
                             {Array.isArray(opt.values) && opt.values.map((v, vIdx) => {
                               const val = v as any;
                               const displayValue = typeof val === 'object' && val !== null 
-                                ? `${val.value || 'N/A'}${val.price_adjustment ? ` (+₹${val.price_adjustment})` : ''}`
+                                ? `${val.value || 'N/A'}${val.price_adjustment ? ` (+₹${val.price_adjustment})` : ''}${val.weight_adjustment ? ` (+${val.weight_adjustment}kg)` : ''}`
                                 : String(val);
                               return <span key={vIdx} className="option-value-chip">{displayValue}</span>;
                             })}
@@ -793,51 +797,102 @@ const ProductDetails: React.FC = () => {
                           </div>
                           <div style={{ padding: '16px' }}>
                             {Array.isArray(opt.values) && opt.values.map((v: any, vIdx: number) => (
-                              <div key={vIdx} style={{ display: 'flex', gap: '12px', marginBottom: '12px', alignItems: 'center' }}>
-                                <div style={{ flex: 2 }}>
-                                  <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Value</label>
-                                  <input 
-                                    placeholder="e.g. Medium" 
-                                    value={typeof v === 'string' ? v : (v.value || '')} 
-                                    onChange={e => {
-                                      const newOptions = [...productOptions];
-                                      const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
-                                        ? { value: newOptions[idx].values[vIdx], price_adjustment: 0 }
-                                        : newOptions[idx].values[vIdx];
-                                      newOptions[idx].values[vIdx] = { ...currentVal, value: e.target.value };
-                                      setProductOptions(newOptions);
-                                    }}
-                                    className="product-edit-input"
-                                    style={{ background: 'white', padding: '10px' }}
-                                  />
+                              <div key={vIdx} style={{ display: 'flex', gap: '12px', marginBottom: '16px', alignItems: 'center' }}>
+                                {/* Option Value Box Container */}
+                                <div style={{
+                                  flex: 1,
+                                  background: '#f8f9fa',
+                                  border: '1px solid #e5e5ea',
+                                  borderRadius: '12px',
+                                  padding: '16px',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '12px'
+                                }}>
+                                  {/* Value */}
+                                  <div>
+                                    <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Value</label>
+                                    <input 
+                                      placeholder="e.g. Medium" 
+                                      value={typeof v === 'string' ? v : (v.value || '')} 
+                                      onChange={e => {
+                                        const newOptions = [...productOptions];
+                                        const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
+                                          ? { value: newOptions[idx].values[vIdx], price_adjustment: 0, weight_adjustment: 0 }
+                                          : newOptions[idx].values[vIdx];
+                                        newOptions[idx].values[vIdx] = { ...currentVal, value: e.target.value };
+                                        setProductOptions(newOptions);
+                                      }}
+                                      className="product-edit-input"
+                                      style={{ background: 'white', padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                                    />
+                                  </div>
+
+                                  {/* Adjustments row: Price & Weight */}
+                                  <div style={{ display: 'flex', gap: '12px' }}>
+                                    <div style={{ flex: 1 }}>
+                                      <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Extra Price (+₹)</label>
+                                      <input 
+                                        placeholder="0" 
+                                        value={typeof v === 'string' ? '0' : (v.price_adjustment || '0')} 
+                                        onChange={e => {
+                                          const newOptions = [...productOptions];
+                                          const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
+                                            ? { value: newOptions[idx].values[vIdx], price_adjustment: 0, weight_adjustment: 0 }
+                                            : newOptions[idx].values[vIdx];
+                                          newOptions[idx].values[vIdx] = { ...currentVal, price_adjustment: parseFloat(e.target.value) || 0 };
+                                          setProductOptions(newOptions);
+                                        }}
+                                        className="product-edit-input"
+                                        type="number"
+                                        style={{ background: 'white', padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                      <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Extra Weight (+kg)</label>
+                                      <input 
+                                        placeholder="0" 
+                                        value={typeof v === 'string' ? '0' : (v.weight_adjustment || '0')} 
+                                        onChange={e => {
+                                          const newOptions = [...productOptions];
+                                          const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
+                                            ? { value: newOptions[idx].values[vIdx], price_adjustment: 0, weight_adjustment: 0 }
+                                            : newOptions[idx].values[vIdx];
+                                          newOptions[idx].values[vIdx] = { ...currentVal, weight_adjustment: parseFloat(e.target.value) || 0 };
+                                          setProductOptions(newOptions);
+                                        }}
+                                        className="product-edit-input"
+                                        type="number"
+                                        step="any"
+                                        style={{ background: 'white', padding: '10px', width: '100%', boxSizing: 'border-box' }}
+                                      />
+                                    </div>
+                                  </div>
                                 </div>
-                                <div style={{ flex: 1 }}>
-                                  <label style={{ fontSize: '10px', color: '#8E8E93', fontWeight: '800', textTransform: 'uppercase', marginBottom: '4px', display: 'block' }}>Extra Price (+₹)</label>
-                                  <input 
-                                    placeholder="0" 
-                                    value={typeof v === 'string' ? '0' : (v.price_adjustment || '0')} 
-                                    onChange={e => {
-                                      const newOptions = [...productOptions];
-                                      const currentVal = typeof newOptions[idx].values[vIdx] === 'string' 
-                                        ? { value: newOptions[idx].values[vIdx], price_adjustment: 0 }
-                                        : newOptions[idx].values[vIdx];
-                                      newOptions[idx].values[vIdx] = { ...currentVal, price_adjustment: parseFloat(e.target.value) || 0 };
-                                      setProductOptions(newOptions);
-                                    }}
-                                    className="product-edit-input"
-                                    type="number"
-                                    style={{ background: 'white', padding: '10px' }}
-                                  />
-                                </div>
+
+                                {/* Delete Button on the Right */}
                                 <button 
                                   onClick={() => {
                                     const newOptions = [...productOptions];
                                     newOptions[idx].values = newOptions[idx].values.filter((_: any, i: number) => i !== vIdx);
                                     setProductOptions(newOptions);
                                   }}
-                                  style={{ marginTop: '18px', background: 'none', border: 'none', color: '#FF3B30', cursor: 'pointer' }}
+                                  style={{
+                                    background: '#fff5f5',
+                                    border: '1px solid #ffccd5',
+                                    borderRadius: '12px',
+                                    color: '#FF3B30',
+                                    cursor: 'pointer',
+                                    width: '44px',
+                                    height: '44px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    transition: 'all 0.2s'
+                                  }}
+                                  type="button"
                                 >
-                                  <X size={18} />
+                                  <X size={20} />
                                 </button>
                               </div>
                             ))}
@@ -845,7 +900,7 @@ const ProductDetails: React.FC = () => {
                               onClick={() => {
                                 const newOptions = [...productOptions];
                                 if (!Array.isArray(newOptions[idx].values)) newOptions[idx].values = [];
-                                newOptions[idx].values.push({ value: '', price_adjustment: 0 });
+                                newOptions[idx].values.push({ value: '', price_adjustment: 0, weight_adjustment: 0 });
                                 setProductOptions(newOptions);
                               }}
                               style={{ background: 'none', border: '1px dashed #D1D1D6', borderRadius: '12px', width: '100%', padding: '10px', color: 'var(--primary)', fontWeight: '700', fontSize: '12px', cursor: 'pointer' }}
