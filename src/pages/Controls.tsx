@@ -142,29 +142,29 @@ const Controls: React.FC = () => {
 
   const populateState = (data: AppConfig) => {
     setConfigId(data.id);
-    setMaintenanceMode(data.maintenance_mode);
-    setMaintenanceMessage(data.maintenance_message || '');
-    setMinVersionCode(data.min_version_code || 1);
-    setLatestVersionName(data.latest_version_name || '');
-    setApkUrl(data.apk_url || '');
+    setMaintenanceMode(Boolean(data.maintenance_mode));
+    setMaintenanceMessage(data.maintenance_message ?? '');
+    setMinVersionCode(data.min_version_code ?? 1);
+    setLatestVersionName(data.latest_version_name ?? '');
+    setApkUrl(data.apk_url ?? '');
     
-    // Logistics settings
-    setBikeFirstKmFee(Number(data.bike_first_km_fee) || 0);
-    setBikeNextKmFee(Number(data.bike_next_km_fee) || 0);
-    setTruckFirstKmFee(Number(data.truck_first_km_fee) || 0);
-    setTruckNextKmFee(Number(data.truck_next_km_fee) || 0);
-    setHelperFee(Number(data.helper_fee) || 0);
-    setMinPriceOffersBatch(Number(data.min_price_offers_batch) || 0);
-    setMinPriceOffersFast(Number(data.min_price_offers_fast) || 0);
+    // Logistics settings - use ?? to preserve 0 values
+    setBikeFirstKmFee(Number(data.bike_first_km_fee ?? 20));
+    setBikeNextKmFee(Number(data.bike_next_km_fee ?? 10));
+    setTruckFirstKmFee(Number(data.truck_first_km_fee ?? 300));
+    setTruckNextKmFee(Number(data.truck_next_km_fee ?? 30));
+    setHelperFee(Number(data.helper_fee ?? 300));
+    setMinPriceOffersBatch(Number(data.min_price_offers_batch ?? 49));
+    setMinPriceOffersFast(Number(data.min_price_offers_fast ?? 149));
 
     // Tiers and ranges
-    setPlatformFeeTier1(Number(data.platform_fee_tier1) || 5);
-    setPlatformFeeTier2(Number(data.platform_fee_tier2) || 10);
-    setPlatformFeeTier3(Number(data.platform_fee_tier3) || 20);
-    setBikeMaxDistance(Number(data.bike_max_distance) || 2);
-    setMaxBatchDistance(Number(data.max_batch_distance) || 1);
-    setMaxOfferDistanceBatch(Number(data.max_offer_distance_batch) || 1);
-    setMaxOfferDistanceFast(Number(data.max_offer_distance_fast) || 1);
+    setPlatformFeeTier1(Number(data.platform_fee_tier1 ?? 5));
+    setPlatformFeeTier2(Number(data.platform_fee_tier2 ?? 10));
+    setPlatformFeeTier3(Number(data.platform_fee_tier3 ?? 20));
+    setBikeMaxDistance(Number(data.bike_max_distance ?? 2));
+    setMaxBatchDistance(Number(data.max_batch_distance ?? 1));
+    setMaxOfferDistanceBatch(Number(data.max_offer_distance_batch ?? 1));
+    setMaxOfferDistanceFast(Number(data.max_offer_distance_fast ?? 1));
   };
 
   useEffect(() => {
@@ -361,10 +361,6 @@ const Controls: React.FC = () => {
                           onChange={(e) => setMaintenanceMessage(e.target.value)}
                           rows={3}
                         />
-                        <div className="info-alert-box">
-                          <Info size={16} />
-                          <span>This message will appear directly on startup and when checking out in the customer application.</span>
-                        </div>
                       </div>
                     </motion.div>
                   )}
@@ -639,7 +635,7 @@ const Controls: React.FC = () => {
                     </div>
 
                     <div className="form-group">
-                      <label className="field-label">Bike Max Range</label>
+                      <label className="field-label">Max Fast Bike Dist</label>
                       <div className="input-prefix-wrapper">
                         <input
                           type="number"
