@@ -11,7 +11,8 @@ import {
   LayoutDashboard,
   ClipboardList,
   Truck,
-  RotateCcw
+  RotateCcw,
+  Sliders
 } from 'lucide-react';
 
 import './Sidebar.css';
@@ -28,6 +29,7 @@ const Sidebar: React.FC = () => {
     { name: 'Returns', path: '/returns', icon: RotateCcw },
     { name: 'Notifications', path: '/notifications', icon: Bell },
     { name: 'Images', path: '/images', icon: ImageIcon },
+    { name: 'Controls', path: '/controls', icon: Sliders },
   ];
 
   return (
