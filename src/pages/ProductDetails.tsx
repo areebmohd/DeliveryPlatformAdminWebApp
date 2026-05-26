@@ -250,12 +250,17 @@ const ProductDetails: React.FC = () => {
         target_group: 'business',
       });
 
-      // 2. Hard delete
-      const { error } = await supabase
-        .from('products')
-        .delete()
-        .eq('id', product.id);
+      // 2. Perform direct soft delete (updates are permitted by RLS and safe for order/cart histories)
+      const isBarcodeProduct = (product.product_type === 'barcode' || !product.product_type) && product.barcode;
+      
+      let query = supabase.from('products').update({ is_deleted: true, in_stock: false });
+      if (isBarcodeProduct && product.barcode) {
+        query = query.eq('barcode', product.barcode);
+      } else {
+        query = query.eq('id', product.id);
+      }
 
+      const { error } = await query;
       if (error) throw error;
 
       // Cleanup raw image from storage if it exists
@@ -297,16 +302,15 @@ const ProductDetails: React.FC = () => {
       setSaving(true);
       // 1. Notify store
       await supabase.from('notifications').insert({
-        user_id: product.store_id,
         title: 'Product Already Available',
         description: `The product "${product.name}" is already available in our catalog. This entry has been removed. Please search and select it from suggestions next time.`,
         target_group: 'business',
       });
 
-      // 2. Delete product
+      // 2. Perform direct soft delete (updates are permitted by RLS and safe for order/cart histories)
       const { error } = await supabase
         .from('products')
-        .delete()
+        .update({ is_deleted: true, in_stock: false })
         .eq('id', product.id);
 
       if (error) throw error;
