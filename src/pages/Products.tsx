@@ -57,18 +57,44 @@ const Products: React.FC = () => {
 
       let fetchedData = (data as ProductWithStore[]) || [];
 
-      // Show all products separately as requested (no grouping)
       let finalData = fetchedData.map(p => ({ ...p, storeCount: 1 }));
 
-      // Deduplicate by barcode for uncomplete barcode products (User Request)
-      if (activeTab === 'barcode' && barcodeFilter === 'uncomplete') {
-        const seenBarcodes = new Set();
-        finalData = finalData.filter(p => {
-          if (!p.barcode) return true;
-          if (seenBarcodes.has(p.barcode)) return false;
-          seenBarcodes.add(p.barcode);
-          return true;
+      // Group all barcode products by barcode (User Request)
+      if (activeTab === 'barcode') {
+        const barcodeGroups = new Map<string, ProductWithStore[]>();
+        const noBarcodeList: ProductWithStore[] = [];
+
+        finalData.forEach(p => {
+          if (!p.barcode) {
+            noBarcodeList.push(p);
+            return;
+          }
+          if (!barcodeGroups.has(p.barcode)) {
+            barcodeGroups.set(p.barcode, []);
+          }
+          barcodeGroups.get(p.barcode)!.push(p);
         });
+
+        const groupedData: ProductWithStore[] = [];
+        barcodeGroups.forEach((groupProducts) => {
+          const preferred = groupProducts.find(p => p.is_info_complete) || groupProducts[0];
+          groupedData.push({
+            ...preferred,
+            storeCount: groupProducts.length,
+            stores: groupProducts.length > 1 
+              ? { name: `${groupProducts.length} shops` } 
+              : preferred.stores
+          });
+        });
+
+        finalData = [...groupedData, ...noBarcodeList];
+
+        // Additionally filter for uncomplete or needs_changes if applied
+        if (barcodeFilter === 'uncomplete') {
+          finalData = finalData.filter(p => !p.is_info_complete);
+        } else if (barcodeFilter === 'needs_changes') {
+          finalData = finalData.filter(p => p.needs_changes);
+        }
       }
 
       setProducts(finalData);

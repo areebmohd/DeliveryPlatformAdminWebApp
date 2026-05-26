@@ -14,8 +14,7 @@ import {
   X,
   XCircle,
   Edit2,
-  CheckCircle2,
-  Store as StoreIcon
+  CheckCircle2
 } from 'lucide-react';
 import { PRODUCT_CATEGORIES } from '../constants/productCategories';
 import type { Product, SpecItem } from '../types';
@@ -32,6 +31,7 @@ const ProductDetails: React.FC = () => {
   const [isPickerVisible, setIsPickerVisible] = useState(false);
   const [productType, setProductType] = useState<'barcode' | 'common' | 'personal'>('barcode');
   const [barcode, setBarcode] = useState('');
+  const [barcodeStores, setBarcodeStores] = useState<{ id: string; name: string }[]>([]);
   
   // Form States
   const [name, setName] = useState('');
@@ -64,6 +64,30 @@ const ProductDetails: React.FC = () => {
       const productData = data as Product;
       setProduct(productData);
       
+      // Fetch sibling stores if barcode product
+      const isBarcodeProduct = (productData.product_type === 'barcode' || !productData.product_type) && productData.barcode;
+      let siblingStores: { id: string; name: string }[] = [];
+      if (isBarcodeProduct && productData.barcode) {
+        const { data: siblingData, error: siblingError } = await supabase
+          .from('products')
+          .select('id, stores(id, name)')
+          .eq('barcode', productData.barcode)
+          .eq('is_deleted', false);
+        
+        if (!siblingError && siblingData) {
+          const seenStores = new Set<string>();
+          siblingData.forEach((item: any) => {
+            if (item.stores && !seenStores.has(item.stores.id)) {
+              seenStores.add(item.stores.id);
+              siblingStores.push({
+                id: item.stores.id,
+                name: item.stores.name || 'Unknown Store'
+              });
+            }
+          });
+        }
+      }
+      setBarcodeStores(siblingStores);
       
       // Initialize form
       setName(productData.name || '');
@@ -295,8 +319,9 @@ const ProductDetails: React.FC = () => {
   const removeSpecPair = useCallback((idx: number) => setDescriptionPairs(prev => prev.filter((_, i) => i !== idx)), []);
 
   const handleProductAlreadyAvailable = useCallback(async () => {
+    if (!product) return;
     const confirmDelete = window.confirm(`Are you sure? This will delete "${product.name}" and notify the store that it is already available in the catalog.`);
-    if (!product || !confirmDelete) return;
+    if (!confirmDelete) return;
 
     try {
       setSaving(true);
@@ -517,15 +542,33 @@ const ProductDetails: React.FC = () => {
               <div className="product-details-divider" />
 
               <div style={{ marginBottom: '2rem' }}>
-                <h3 className="product-details-section-title">Store</h3>
-                {product.stores && (
-                  <button 
-                    onClick={() => navigate(`/stores/${product.stores!.id}`)}
-                    className="product-details-store-link-inline"
-                  >
-                    {String(product.stores!.name || 'Unknown Store')}
-                    <ChevronRight size={16} />
-                  </button>
+                <h3 className="product-details-section-title">
+                  {barcodeStores.length > 1 ? 'Available in Stores' : 'Store'}
+                </h3>
+                {barcodeStores.length > 1 ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {barcodeStores.map((store) => (
+                      <button 
+                        key={store.id}
+                        onClick={() => navigate(`/stores/${store.id}`)}
+                        className="product-details-store-link-inline"
+                        style={{ marginBottom: 0 }}
+                      >
+                        {store.name}
+                        <ChevronRight size={16} />
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  product.stores && (
+                    <button 
+                      onClick={() => navigate(`/stores/${product.stores!.id}`)}
+                      className="product-details-store-link-inline"
+                    >
+                      {String(product.stores!.name || 'Unknown Store')}
+                      <ChevronRight size={16} />
+                    </button>
+                  )
                 )}
               </div>
 
@@ -611,20 +654,6 @@ const ProductDetails: React.FC = () => {
                           <ChevronRight size={18} color="var(--primary)" />
                         </button>
                       </div>
-                      {id === 'new' && (
-                        <div>
-                          <label className="product-edit-label">Assign to Store</label>
-                          <button 
-                            onClick={() => setIsStorePickerVisible(true)}
-                            className="product-edit-select-btn"
-                          >
-                            <span style={{ color: selectedStoreId ? '#1C1C1E' : '#999', fontWeight: 600 }}>
-                              {selectedStoreId ? stores.find(s => s.id === selectedStoreId)?.name : 'Select Store'}
-                            </span>
-                            <ChevronRight size={18} color="var(--primary)" />
-                          </button>
-                        </div>
-                      )}
                     </div>
 
                     <div className="product-edit-grid">
