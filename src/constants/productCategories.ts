@@ -7,7 +7,6 @@ export const PRODUCT_CATEGORIES = [
   'Home',
   'Kids',
   'Sports',
-  'Vehicles',
   'Hardware',
   'Animals',
   'Art',
