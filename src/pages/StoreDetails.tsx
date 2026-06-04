@@ -113,7 +113,6 @@ const StoreDetails: React.FC = () => {
       { key: 'state', label: 'State' },
       { key: 'pincode', label: 'Pincode' },
       { key: 'owner_name', label: 'Owner Name' },
-      { key: 'owner_number', label: 'Owner Number' },
       { key: 'location_wkt', label: 'Location' },
       { key: 'opening_hours', label: 'Opening Hours' },
       { key: 'banner_url', label: 'Store Banner' },
@@ -148,7 +147,6 @@ const StoreDetails: React.FC = () => {
         state: store.state,
         pincode: store.pincode,
         owner_name: store.owner_name,
-        owner_number: store.owner_number,
         location_wkt: store.location_wkt,
         opening_hours: store.opening_hours,
         banner_url: store.banner_url,
@@ -238,7 +236,6 @@ const StoreDetails: React.FC = () => {
         state: store.state,
         pincode: store.pincode,
         owner_name: store.owner_name,
-        owner_number: store.owner_number,
         location_wkt: store.location_wkt,
         opening_hours: store.opening_hours,
         banner_url: store.banner_url,
@@ -434,22 +431,13 @@ const StoreDetails: React.FC = () => {
             <div className="store-details-info-layout">
               <div className="card store-info-section-card">
                 <h3 className="store-info-section-title">Owner Information</h3>
-                <div className="store-info-row">
+                <div className="store-info-row" style={{ marginBottom: 0 }}>
                    <p className="store-info-label">Owner Name</p>
                    <p className="store-info-value">{store.owner_name || 'Not provided'}</p>
                 </div>
-                <div className="store-info-row">
-                   <p className="store-info-label">Owner Number</p>
-                   <button 
-                     onClick={() => handleContact('tel', store.owner_number || '')}
-                     className="store-info-value-link"
-                   >
-                     {store.owner_number || 'Not provided'}
-                   </button>
-                </div>
 
                 {store.verification_images && store.verification_images.length > 0 && (
-                  <div style={{ borderTop: '1px solid #F2F2F7', paddingTop: '1rem' }}>
+                  <div style={{ borderTop: '1px solid #F2F2F7', paddingTop: '1rem', marginTop: '1rem' }}>
                     <p className="store-info-label" style={{ marginBottom: '10px' }}>Verification Documents</p>
                     <div style={{ display: 'flex', gap: '10px', overflowX: 'auto', paddingBottom: '8px' }}>
                       {store.verification_images.map((img, i) => (
@@ -575,20 +563,7 @@ const StoreDetails: React.FC = () => {
                 </div>
               )}
 
-              {(store.instagram_url || store.facebook_url) && (
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', marginTop: '1.5rem', padding: '1rem 0' }}>
-                   {store.instagram_url && (
-                     <button onClick={() => handleContact('url', store.instagram_url || '')} style={{ background: 'white', border: '1px solid #E5E5EA', width: '48px', height: '48px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#E4405F' }}>
-                        <Globe size={24} />
-                     </button>
-                   )}
-                   {store.facebook_url && (
-                     <button onClick={() => handleContact('url', store.facebook_url || '')} style={{ background: 'white', border: '1px solid #E5E5EA', width: '48px', height: '48px', borderRadius: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1877F2' }}>
-                        <ExternalLink size={24} />
-                     </button>
-                   )}
-                </div>
-              )}
+
             </div>
           )}
         </div>

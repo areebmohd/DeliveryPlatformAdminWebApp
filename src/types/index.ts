@@ -75,7 +75,6 @@ export interface Store {
   has_pending_changes: boolean;
   created_at: string;
   owner_name: string | null;
-  owner_number: string | null;
   upi_id: string | null;
   owner_id: string;
   location_wkt: string | null;
@@ -84,8 +83,6 @@ export interface Store {
   approved_details?: Record<string, unknown>;
   verification_images: string[] | null;
   whatsapp_number: string | null;
-  instagram_url: string | null;
-  facebook_url: string | null;
   address_line_1: string | null;
   city: string | null;
   state: string | null;
