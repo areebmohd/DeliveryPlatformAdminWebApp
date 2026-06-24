@@ -8,9 +8,7 @@ import {
   Smartphone, 
   CheckCircle2, 
   AlertTriangle,
-  Info,
   MessageSquare,
-  Globe,
   Bike,
   Truck,
   IndianRupee,
@@ -399,7 +397,7 @@ const Controls: React.FC = () => {
                     min="1"
                     required
                   />
-                  <p className="input-helper">The minimum numeric build number required (e.g. 5)</p>
+                  <p className="input-helper">The minimum build number required (e.g. 5)</p>
                 </div>
 
                 <div className="form-group">
@@ -415,20 +413,7 @@ const Controls: React.FC = () => {
                   <p className="input-helper">Display release tag (e.g. 1.2.0)</p>
                 </div>
 
-                <div className="form-group full-width">
-                  <label className="field-label">APK Download URL</label>
-                  <div className="input-with-icon">
-                    <Globe size={16} className="input-inner-icon" />
-                    <input
-                      type="url"
-                      className="controls-input"
-                      value={apkUrl}
-                      onChange={(e) => setApkUrl(e.target.value)}
-                      placeholder="https://github.com/.../Zoro.apk"
-                    />
-                  </div>
-                  <p className="input-helper">The direct link where customers will download the latest APK file.</p>
-                </div>
+
               </div>
             </motion.div>
 
